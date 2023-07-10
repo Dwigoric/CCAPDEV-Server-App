@@ -1,0 +1,13 @@
+{
+    "name": "compact-donuts-server-app",
+    "packageManager": "yarn@3.5.0",
+    "type": "module",
+    "version": "0.0.1",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.18.2",
+        "morgan": "^1.10.0"
+    }
+}
