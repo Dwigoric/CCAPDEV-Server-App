@@ -7,6 +7,7 @@
 import app from '../app.js'
 import de_bug from 'debug'
 import http from 'http'
+import dotenv from 'dotenv'
 
 const debug = de_bug('compact-donuts-server-app:server')
 
@@ -14,6 +15,7 @@ const debug = de_bug('compact-donuts-server-app:server')
  * Get port from environment and store in Express.
  */
 
+dotenv.config()
 const port = normalizePort(process.env.PORT || '3000')
 app.set('port', port)
 
