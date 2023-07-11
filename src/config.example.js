@@ -1,7 +1,5 @@
-export default {
-    mongodb: {
-        name: '',
-        connectionString: '',
-        options: {}
-    }
+export const mongodb = {
+    name: '',
+    connectionString: '',
+    options: {}
 }
