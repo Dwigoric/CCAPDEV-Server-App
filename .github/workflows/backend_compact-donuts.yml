@@ -21,15 +21,12 @@ jobs:
         with:
           node-version: '18.x'
           
-      - name: Set Yarn version
-        run: |
-          # Get latest yarn
-          yarn set version stable
-          
       - name: Setup Yarn
-        uses: mskelton/setup-yarn@main
-        with:
-          cache: yarn # Package manager: yarn, npm, pnpm
+        run: |
+          echo('Get latest yarn')
+          yarn set version stable
+          echo('Install dependencies')
+          yarn install --immutable
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
