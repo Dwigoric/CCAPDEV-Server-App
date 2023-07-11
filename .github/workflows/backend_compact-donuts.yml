@@ -30,7 +30,7 @@ jobs:
         run: |
           if (Test-Path -Path '.yarn\cache\') {
             echo '.yarn\cache checked in for "Zero Installs", pushing cache and not running install...'
-          } elsif (-not (Test-Path -Path '.yarn\cache\')) {
+          } elseif (-not (Test-Path -Path '.yarn\cache\')) {
             echo '.yarn/cache doesnt exist, running yarn set version and install..'
             echo 'Setting yarn version to latest (3.x)..'
             yarn set version stable
