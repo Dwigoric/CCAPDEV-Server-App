@@ -5,7 +5,7 @@ const router = express.Router()
 
 /* POST login details. */
 router.post('/login', async (req, res, next) => {
-    if (!mongo.hasTable('users')) await mongo.createTable('users')
+    if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 
     const { username, password } = req.body
     const user = await mongo.get('users', username)
