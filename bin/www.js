@@ -5,11 +5,11 @@
  */
 
 import app from '../src/app.js'
-import de_bug from 'debug'
+import debugLogger from 'debug'
 import http from 'http'
 import dotenv from 'dotenv'
 
-const debug = de_bug('compact-donuts-server-app:server')
+const debug = debugLogger('compact-donuts-server-app:server')
 
 /**
  * Get port from environment and store in Express.

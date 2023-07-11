@@ -1,8 +1,15 @@
+// Packages
 import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 
+// MongoDB
+import MongoController from './db/conn.js'
+const mongo = new MongoController()
+await mongo.init().then(() => console.log('MongoDB connected!'))
+
+// Routes
 import indexRouter from './routes/index.js'
 
 const app = express()
