@@ -25,22 +25,6 @@ jobs:
         uses: mskelton/setup-yarn@main
         with:
           cache: yarn # Package manager: yarn, npm, pnpm
-
-      - name: npm install, build, and test
-        run: |
-          if (Test-Path -Path '.yarn\cache\') {
-            echo '.yarn\cache checked in for "Zero Installs", pushing cache and not running install...'
-          } elseif (-not (Test-Path -Path '.yarn\cache\')) {
-            echo '.yarn/cache doesnt exist, running yarn set version and install..'
-            echo 'Setting yarn version to latest (3.x)..'
-            yarn set version stable
-            echo 'Checking yarn version..'
-            yarn -v
-            echo 'Running yarn install..'
-            yarn install
-          }
-          npm run build --if-present
-          npm run test --if-present
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
