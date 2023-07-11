@@ -117,4 +117,4 @@ function parseUpdateInput(updated) {
     return updateObject
 }
 
-export default MongoController
+export const mongo = new MongoController()

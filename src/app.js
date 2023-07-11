@@ -5,8 +5,7 @@ import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 
 // MongoDB
-import MongoController from './db/conn.js'
-const mongo = new MongoController()
+import { mongo } from './db/conn.js'
 await mongo.init().then(() => console.log('MongoDB connected!'))
 
 // Routes
