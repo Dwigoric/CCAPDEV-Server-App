@@ -21,9 +21,10 @@ jobs:
         with:
           node-version: '18.x'
           
-      - run: |
+      - name: Set Yarn version
+        run: |
           # Get latest yarn
-          yarn set version latest
+          yarn set version stable
           
       - name: Setup Yarn
         uses: mskelton/setup-yarn@main
