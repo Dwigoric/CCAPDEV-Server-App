@@ -1,5 +1,5 @@
 export const mongodb = {
     name: '',
-    connectionString: '',
+    connectionString: process.env.MONGODB_URI,
     options: {}
 }
