@@ -13,6 +13,7 @@ await mongo.init().then(() => console.log('MongoDB connected!'))
 // Routes
 import indexRouter from './routes/index.js'
 import loginRouter from './routes/login.js'
+import registerRouter from './routes/register.js'
 
 const app = express()
 
@@ -32,6 +33,7 @@ app.use(cookieParser())
 
 app.use('/', indexRouter)
 app.use('/', loginRouter)
+app.use('/', registerRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
