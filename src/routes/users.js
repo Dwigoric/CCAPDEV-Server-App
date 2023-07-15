@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.post('/users/login', async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
     if (!(await mongo.hasTable('users')))
         return res.status(404).json({ error: true, message: 'User not found' })
 
@@ -21,7 +21,7 @@ router.post('/users/login', async (req, res, next) => {
     return res.status(200).json({ user, message: 'Login successful' })
 })
 
-router.put('/users/register', async (req, res, next) => {
+router.put('/register', async (req, res, next) => {
     if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 
     const { username, password } = req.body
