@@ -1,1 +1,1 @@
-import("./bin/www.js");
+import("./index.js");

@@ -3,7 +3,7 @@
     "type": "module",
     "version": "0.0.1",
     "scripts": {
-        "start": "node bin/www.js"
+        "start": "node index.js"
     },
     "dependencies": {
         "@sapphire/utilities": "^3.12.0",

@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-import app from '../src/app.js'
+import app from './src/app.js'
 import debugLogger from 'debug'
 import http from 'http'
 import dotenv from 'dotenv'
