@@ -8,7 +8,7 @@ router.post('/login', async (req, res, next) => {
     if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 
     const { username, password } = req.body
-    const user = await mongo.get('users', username)
+    const user = await mongo.findOne('users', { username })
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
     // TODO: Hash passwords
     if (user.password !== password)
