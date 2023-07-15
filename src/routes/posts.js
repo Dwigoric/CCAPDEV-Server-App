@@ -9,10 +9,14 @@ router.put('/posts', async (req, res, next) => {
 
     const { userId, title, body, image } = req.body
 
+    const user = await mongo.get('users', userId)
+    delete user.password
+    delete user._id
+
     let post
     try {
         post = await mongo.create('posts', uuidV5(Date.now(), uuidV5.URL), {
-            userId,
+            user,
             title,
             body,
             image,
