@@ -13,20 +13,21 @@ router.put('/', async (req, res, next) => {
     delete user.password
     delete user._id
 
-    let post
+    const post = {
+        user: {
+            id: user.id,
+            username: user.username,
+            image: user.image
+        },
+        title,
+        body,
+        image,
+        date: new Date(),
+        edited: false
+    }
+
     try {
-        post = await mongo.create('posts', uuidV5(Date.now(), uuidV5.URL), {
-            user: {
-                id: user.id,
-                username: user.username,
-                image: user.image
-            },
-            title,
-            body,
-            image,
-            date: new Date(),
-            edited: false
-        })
+        await mongo.create('posts', uuidV5(Date.now().toString(), uuidV5.URL), post)
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
