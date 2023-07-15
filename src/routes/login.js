@@ -3,7 +3,6 @@ import { mongo } from '../db/conn.js'
 
 const router = express.Router()
 
-/* POST login details. */
 router.post('/login', async (req, res, next) => {
     if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 

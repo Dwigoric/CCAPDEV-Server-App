@@ -4,7 +4,6 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-/* POST login details. */
 router.put('/register', async (req, res, next) => {
     if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 
