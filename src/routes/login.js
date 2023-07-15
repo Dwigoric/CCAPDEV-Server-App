@@ -9,9 +9,10 @@ router.post('/login', async (req, res, next) => {
 
     const { username, password } = req.body
     const user = await mongo.get('users', username)
-    if (!user) return res.status(404).json({ message: 'User not found' })
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
     // TODO: Hash passwords
-    if (user.password !== password) return res.status(401).json({ message: 'Credentials mismatch' })
+    if (user.password !== password)
+        return res.status(401).json({ error: true, message: 'Credentials mismatch' })
 
     // Send a JSON response with 200 OK
     delete user.password
