@@ -16,7 +16,11 @@ router.put('/posts', async (req, res, next) => {
     let post
     try {
         post = await mongo.create('posts', uuidV5(Date.now(), uuidV5.URL), {
-            user,
+            user: {
+                id: user.id,
+                username: user.username,
+                image: user.image
+            },
             title,
             body,
             image,
