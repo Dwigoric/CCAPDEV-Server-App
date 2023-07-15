@@ -26,7 +26,7 @@ router.put('/register', async (req, res, next) => {
     // Send a JSON response with 200 OK
     delete user.password
     delete user._id
-    return res.status(200).json({ user, message: 'Register successful' })
+    return res.status(201).json({ user, message: 'Register successful' })
 })
 
 export default router
