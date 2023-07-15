@@ -4,7 +4,8 @@ import { mongo } from '../db/conn.js'
 const router = express.Router()
 
 router.post('/login', async (req, res, next) => {
-    if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
+    if (!(await mongo.hasTable('users')))
+        return res.status(404).json({ error: true, message: 'User not found' })
 
     const { username, password } = req.body
     const user = await mongo.findOne('users', { username })
