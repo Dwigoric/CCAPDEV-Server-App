@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.put('/posts', async (req, res, next) => {
+router.put('/', async (req, res, next) => {
     if (!(await mongo.hasTable('posts'))) await mongo.createTable('posts')
 
     const { userId, title, body, image } = req.body
