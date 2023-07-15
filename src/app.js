@@ -3,6 +3,8 @@ import createError from 'http-errors'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import logger from 'morgan'
+import cors from 'cors'
+import 'dotenv/config'
 
 // MongoDB
 import { mongo } from './db/conn.js'
@@ -12,6 +14,15 @@ await mongo.init().then(() => console.log('MongoDB connected!'))
 import indexRouter from './routes/index.js'
 
 const app = express()
+
+// Configure CORS
+app.use(
+    cors({
+        origin:
+            process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost',
+        optionsSuccessStatus: 200
+    })
+)
 
 app.use(logger('dev'))
 app.use(express.json())
