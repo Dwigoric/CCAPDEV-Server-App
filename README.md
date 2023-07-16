@@ -8,6 +8,14 @@ Before you can run the server, you need to install the dependencies.
 npm install
 ```
 
+## Setup Configuration
+Duplicate the `.env.example` file and rename it to `.env`.
+The `.env` file contains environment variables that are used by the server.
+
+Duplicate the `src/config.example.js` file and rename it to `src/config.js`.
+The `src/config.js` file contains configuration that is used by the server.
+You can use this to configure your app's MongoDB connection and other settings.
+
 ## Running the server
 To run the server, you need to run the following command:
 ```bash
