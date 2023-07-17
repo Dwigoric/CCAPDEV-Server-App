@@ -68,4 +68,28 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ post, message: 'Post found' })
 })
 
+router.patch('/:id', async (req, res, next) => {
+    const { id } = req.params
+
+    const { title, body } = req.body
+
+    const post = await mongo.get('posts', id)
+    if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+
+    const updatedPost = {
+        ...post,
+        title: title || post.title,
+        body: body || post.body,
+        edited: Date.now()
+    }
+
+    try {
+        await mongo.update('posts', id, updatedPost)
+    } catch (err) {
+        return res.status(500).json({ error: true, message: err.message })
+    }
+
+    return res.status(200).json({ post: updatedPost, message: 'Post updated' })
+})
+
 export default router
