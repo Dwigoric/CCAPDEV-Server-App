@@ -8,7 +8,8 @@ router.put('/', async (req, res, next) => {
     if (!(await mongo.hasTable('posts'))) {
         await mongo.createTable('posts')
         // Create text index for search. Include `title` and `body` fields
-        // Special characters must be escaped with `\`
+        // Include the `date` field for sorting
+        await mongo.db.createIndex('posts', { title: 'text', body: 'text', date: -1 })
     }
 
     const { userId, title, body, image } = req.body
