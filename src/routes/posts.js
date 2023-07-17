@@ -5,7 +5,11 @@ import { v5 as uuidV5 } from 'uuid'
 const router = express.Router()
 
 router.put('/', async (req, res, next) => {
-    if (!(await mongo.hasTable('posts'))) await mongo.createTable('posts')
+    if (!(await mongo.hasTable('posts'))) {
+        await mongo.createTable('posts')
+        // Create text index for search. Include `title` and `body` fields
+        // Special characters must be escaped with `\`
+    }
 
     const { userId, title, body, image } = req.body
 
@@ -38,7 +42,8 @@ router.put('/', async (req, res, next) => {
 
 router.get('/', async (req, res, next) => {
     // Return if `posts` collection doesn't exist
-    if (!(await mongo.hasTable('posts'))) return res.status(200).json({ posts: [] })
+    if (!(await mongo.hasTable('posts')))
+        return res.status(200).json({ posts: [], loadedAll: true })
 
     // Use `last` and `limit` query param to paginate
     const { last, limit } = req.query
@@ -56,6 +61,23 @@ router.get('/', async (req, res, next) => {
         posts,
         loadedAll: (await mongo.findOne('posts'))?.date === posts[posts.length - 1]?.date
     })
+})
+
+router.get('/search', async (req, res, next) => {
+    const { q } = req.query
+
+    if (!q) return next()
+
+    try {
+        const posts = await mongo.db
+            .collection('posts')
+            .find({ $text: { $search: decodeURIComponent(q) } })
+            .toArray()
+
+        return res.status(200).json({ posts })
+    } catch (err) {
+        return res.status(500).json({ error: true, message: err.message })
+    }
 })
 
 router.get('/:id', async (req, res, next) => {
