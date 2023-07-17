@@ -8,8 +8,11 @@ router.put('/', async (req, res, next) => {
     if (!(await mongo.hasTable('posts'))) {
         await mongo.createTable('posts')
         // Create text index for search. Include `title` and `body` fields
-        // Include the `date` field for sorting
-        await mongo.db.createIndex('posts', { title: 'text', body: 'text', date: -1 })
+        // Azure Cosmos DB supports only one text index per collection, so catch the error
+        await mongo.db.createIndex('posts', { title: 'text', body: 'text' }).catch(() => {})
+
+        // Create index for sorting by date
+        await mongo.db.createIndex('posts', { date: -1 })
     }
 
     const { userId, title, body, image } = req.body
