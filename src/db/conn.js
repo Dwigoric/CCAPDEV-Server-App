@@ -35,6 +35,10 @@ class MongoController {
         return this.db.dropCollection(table)
     }
 
+    count(table) {
+        return this.db.collection(table).estimatedDocumentCount()
+    }
+
     // Document methods
 
     getAll(table, filter = []) {
@@ -44,6 +48,33 @@ class MongoController {
                 .find({ id: { $in: filter } }, { _id: 0 })
                 .toArray()
         return this.db.collection(table).find({}, { _id: 0 }).toArray()
+    }
+
+    getPaginated(
+        table,
+        limit,
+        last = {
+            key: '',
+            value: 0
+        },
+        filter = []
+    ) {
+        if (filter.length > 0)
+            return this.db
+                .collection(table)
+                .find({
+                    id: { $in: filter },
+                    [last.key]: { $lt: last.value }
+                })
+                .sort({ [last.key]: -1 })
+                .limit(limit)
+                .toArray()
+        return this.db
+            .collection(table)
+            .find({ [last.key]: { $lt: last.value } })
+            .sort({ [last.key]: -1 })
+            .limit(limit)
+            .toArray()
     }
 
     getKeys(table) {

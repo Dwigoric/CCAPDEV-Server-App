@@ -22,8 +22,9 @@ router.put('/', async (req, res, next) => {
         title,
         body,
         image,
-        date: new Date(),
-        edited: false
+        date: Date.now(),
+        edited: false,
+        reactions: 0
     }
 
     try {
@@ -34,6 +35,28 @@ router.put('/', async (req, res, next) => {
 
     delete post._id
     return res.status(201).json({ post, message: 'Post created' })
+})
+
+router.get('/', async (req, res, next) => {
+    // Return if `posts` collection doesn't exist
+    if (!(await mongo.hasTable('posts'))) return res.status(200).json({ posts: [] })
+
+    // Use `last` and `limit` query param to paginate
+    const { last, limit } = req.query
+
+    const posts = await mongo.getPaginated(
+        'posts',
+        !limit || Number(limit) > 20 ? 20 : Number(limit),
+        {
+            key: 'date',
+            value: Number(last)
+        }
+    )
+
+    return res.status(206).json({
+        posts,
+        loadedAll: (await mongo.findOne('posts'))?.date === posts[posts.length - 1]?.date
+    })
 })
 
 export default router
