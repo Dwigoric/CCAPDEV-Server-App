@@ -91,4 +91,19 @@ router.patch('/:id', async (req, res, next) => {
     return res.status(200).json({ post: updatedPost, message: 'Post updated' })
 })
 
+router.delete('/:id', async (req, res, next) => {
+    const { id } = req.params
+
+    const post = await mongo.get('posts', id)
+    if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+
+    try {
+        await mongo.delete('posts', id)
+    } catch (err) {
+        return res.status(500).json({ error: true, message: err.message })
+    }
+
+    return res.status(200).json({ message: 'Post deleted' })
+})
+
 export default router
