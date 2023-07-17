@@ -23,7 +23,6 @@ router.put('/', async (req, res, next) => {
         body,
         image,
         date: Date.now(),
-        edited: false,
         reactions: 0
     }
 
