@@ -1,6 +1,7 @@
 import express from 'express'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
+import { mergeObjects } from '@sapphire/utilities'
 
 const router = express.Router()
 
@@ -34,7 +35,8 @@ router.put('/register', async (req, res, next) => {
         user = await mongo.create('users', uuidV5(username, uuidV5.URL), {
             username,
             password,
-            image: `https://robohash.org/${username}`
+            image: `https://robohash.org/${username}`,
+            description: ''
         })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
@@ -44,6 +46,40 @@ router.put('/register', async (req, res, next) => {
     delete user.password
     delete user._id
     return res.status(201).json({ user, message: 'Register successful' })
+})
+
+router.get('/:id', async (req, res, next) => {
+    const { id } = req.params
+    const user = await mongo.get('users', id)
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
+
+    // Send a JSON response with 200 OK
+    delete user.password
+    delete user._id
+    return res.status(200).json({ user, message: 'User found' })
+})
+
+router.patch('/:id', async (req, res, next) => {
+    const { id } = req.params
+    const user = await mongo.get('users', id)
+
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
+    delete user.password
+    delete user._id
+
+    const { username, image, description } = req.body
+    await mongo.update(
+        'users',
+        id,
+        mergeObjects(user, {
+            username,
+            image,
+            description
+        })
+    )
+
+    // Send a JSON response with 200 OK
+    return res.status(200).json({ user, message: 'User updated' })
 })
 
 export default router
