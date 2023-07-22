@@ -30,6 +30,12 @@ Alternatively, you can set them in your shell.
 You can change the port the server runs on by setting the `PORT` environment variable.
 The default port is `3000`.
 
+### CORS Origin
+You can change the CORS origin by setting the `FRONTEND_URL` environment variable.
+The default CORS origin is `http://localhost:5173`.
+Change the value to Vue's given URL when running the frontend in development,
+i.e., `http://localhost:5173`.
+
 ### Database
 This variable is **required** to be set. You can change the database the server connects to
 by setting the `MONGODB_URI` environment variable.

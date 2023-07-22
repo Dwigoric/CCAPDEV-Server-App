@@ -7,6 +7,7 @@ import cors from 'cors'
 import 'dotenv/config'
 
 // MongoDB
+if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI not set! Check your .env file!')
 import { mongo } from './db/conn.js'
 await mongo.init().then(() => console.log('MongoDB connected!'))
 
@@ -18,11 +19,13 @@ import commentsRouter from './routes/comments.js'
 
 const app = express()
 
+if (!process.env.FRONTEND_URL)
+    console.warn('FRONTEND_URL not set. The default value is http://localhost:5173')
+
 // Configure CORS
 app.use(
     cors({
-        origin:
-            process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost',
+        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
         optionsSuccessStatus: 200
     })
 )
