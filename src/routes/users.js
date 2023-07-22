@@ -30,9 +30,16 @@ router.put('/register', async (req, res, next) => {
     if (exists) return res.status(404).json({ error: true, message: 'User already exists' })
     // TODO: Hash passwords
 
-    let user
+    const generatedId = uuidV5(username, uuidV5.URL)
+    const user = {
+        id: generatedId,
+        username,
+        password,
+        image: `https://robohash.org/${username}`,
+        description: ''
+    }
     try {
-        user = await mongo.create('users', uuidV5(username, uuidV5.URL), {
+        await mongo.create('users', generatedId, {
             username,
             password,
             image: `https://robohash.org/${username}`,
@@ -44,7 +51,6 @@ router.put('/register', async (req, res, next) => {
 
     // Send a JSON response with 200 OK
     delete user.password
-    delete user._id
     return res.status(201).json({ user, message: 'Register successful' })
 })
 
