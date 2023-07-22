@@ -10,6 +10,8 @@ class MongoController {
     }
 
     async init() {
+        if (!mongodb.connectionString)
+            throw new Error('MongoDB connection string not provided. Check your .env file.')
         const mongoClient = await Mongo.connect(mongodb.connectionString, mongodb.options)
         this.db = mongoClient.db(mongodb.name)
     }

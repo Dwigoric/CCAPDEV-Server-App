@@ -7,7 +7,6 @@ import cors from 'cors'
 import 'dotenv/config'
 
 // MongoDB
-if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI not set! Check your .env file!')
 import { mongo } from './db/conn.js'
 await mongo.init().then(() => console.log('MongoDB connected!'))
 
