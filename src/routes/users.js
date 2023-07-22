@@ -59,6 +59,17 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ user, message: 'User found' })
 })
 
+router.get('/username/:username', async (req, res, next) => {
+    const { username } = req.params
+    const user = await mongo.findOne('users', { username })
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
+
+    // Send a JSON response with 200 OK
+    delete user.password
+    delete user._id
+    return res.status(200).json({ user, message: 'User found' })
+})
+
 router.patch('/:id', async (req, res, next) => {
     const { id } = req.params
     const user = await mongo.get('users', id)

@@ -132,4 +132,16 @@ router.delete('/:id', async (req, res, next) => {
     return res.status(200).json({ message: 'Post deleted' })
 })
 
+router.get('/user/:id', async (req, res, next) => {
+    const { id } = req.params
+
+    const posts = await mongo.db
+        .collection('posts')
+        .find({ 'user.id': id })
+        .sort({ date: 1 })
+        .toArray()
+
+    return res.status(200).json({ posts })
+})
+
 export default router
