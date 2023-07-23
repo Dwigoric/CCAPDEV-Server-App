@@ -98,10 +98,6 @@ class MongoController {
             .toArray()
     }
 
-    findOne(table, query) {
-        return this.db.collection(table).findOne(query)
-    }
-
     has(table, id) {
         return this.get(table, id).then(Boolean)
     }

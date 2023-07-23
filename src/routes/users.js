@@ -67,7 +67,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.get('/username/:username', async (req, res, next) => {
     const { username } = req.params
-    const user = await mongo.findOne('users', { username })
+    const user = await mongo.getBy('users', 'username', username)
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
 
     // Send a JSON response with 200 OK
