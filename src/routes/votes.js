@@ -8,7 +8,10 @@ router.patch('/:id', async (req, res)  => {
      const { id } = req.params
      const { userId, vote } = req.body
 
-     
+     const isLoggedIn = await mongo.findOne('users', { id: userId })
+     if (!isLoggedIn) {
+          return res.status(500).json({ error: true, message: 'Not logged in' })
+     }
      //Find the post
      const post = await mongo.get('posts', { id: id })
      if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
