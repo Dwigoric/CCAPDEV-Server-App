@@ -15,6 +15,7 @@ import indexRouter from './routes/index.js'
 import usersRouter from './routes/users.js'
 import postsRouter from './routes/posts.js'
 import commentsRouter from './routes/comments.js'
+import votesRouter from './routes/votes.js'
 
 const app = express()
 
@@ -36,6 +37,7 @@ app.use('/', indexRouter)
 app.use('/users', usersRouter)
 app.use('/posts', postsRouter)
 app.use('/comments', commentsRouter)
+app.use('/votes', votesRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
