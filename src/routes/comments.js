@@ -15,7 +15,7 @@ router.put('/:postId', async (req, res, next) => {
         await mongo.db.createIndex('comments', { date: -1 })
     }
 
-    const { userId, body } = req.body
+    const { userId, body, postId, parentCommentId } = req.body
 
     const user = await mongo.get('users', userId)
     delete user.password
@@ -28,8 +28,9 @@ router.put('/:postId', async (req, res, next) => {
             image: user.image
         },
         body,
-        date: Date.now(),
-        reactions: 0
+        postId, 
+        body,  
+        parentCommentId
     }
 
     try {
