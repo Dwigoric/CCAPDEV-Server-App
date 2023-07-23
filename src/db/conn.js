@@ -87,6 +87,17 @@ class MongoController {
         return this.db.collection(table).findOne(resolveQuery(id))
     }
 
+    getBy(table, key, value) {
+        return this.db.collection(table).findOne({ [key]: value })
+    }
+
+    getManyBy(table, key, value) {
+        return this.db
+            .collection(table)
+            .find({ [key]: value })
+            .toArray()
+    }
+
     findOne(table, query) {
         return this.db.collection(table).findOne(query)
     }
