@@ -5,41 +5,13 @@ import { v5 as uuidV5 } from 'uuid'
 const router = express.Router()
 
 router.put('/:postId', async (req, res, next) => {
-    if (!(await mongo.hasTable('comments'))) {
-        await mongo.createTable('comments')
-        // Create text index for search. Include `title` and `body` fields
-        // Azure Cosmos DB supports only one text index per collection, so catch the error
-        await mongo.db.createIndex('comments', { body: 'text' }).catch(() => {})
-
-        // Create index for sorting by date
-        await mongo.db.createIndex('comments', { date: -1 })
-    }
-
-    const { userId, body, postId, parentCommentId } = req.body
-
-    const user = await mongo.get('users', userId)
-    delete user.password
-    delete user._id
-
-    const comment = {
-        user: {
-            id: user.id,
-            username: user.username,
-            image: user.image
-        },
-        body,
-        postId,
-        parentCommentId
-    }
-
     try {
-        await mongo.create('comments', uuidV5(Date.now().toString(), uuidV5.URL), comment)
+        await mongo.create('comments', uuidV5(Date.now().toString(), uuidV5.URL), req.body)
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    delete comment._id
-    return res.status(201).json({ comment, message: 'Comment created' })
+    return res.status(201).json({ comment: req.body, message: 'Comment created' })
 })
 
 router.get('/:postId', async (req, res, next) => {
