@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.put('/', async (req, res, next) => {
+router.put('/:postId', async (req, res, next) => {
     if (!(await mongo.hasTable('comments'))) {
         await mongo.createTable('comments')
         // Create text index for search. Include `title` and `body` fields
@@ -42,7 +42,7 @@ router.put('/', async (req, res, next) => {
     return res.status(201).json({ comment, message: 'Comment created' })
 })
 
-router.get('/', async (req, res, next) => {
+router.get('/:postId', async (req, res, next) => {
     // Return if `comments` collection doesn't exist
     if (!(await mongo.hasTable('comments')))
         return res.status(200).json({ comments: [], loadedAll: true })
@@ -65,7 +65,7 @@ router.get('/', async (req, res, next) => {
     })
 })
 
-router.get('/search', async (req, res, next) => {
+router.get('/:postId/search', async (req, res, next) => {
     const { q } = req.query
 
     if (!q) return next()
@@ -82,7 +82,7 @@ router.get('/search', async (req, res, next) => {
     }
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)
@@ -91,7 +91,7 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ comment, message: 'Comment found' })
 })
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const { title, body } = req.body
@@ -115,7 +115,7 @@ router.patch('/:id', async (req, res, next) => {
     return res.status(200).json({ comment: updatedcomment, message: 'Comment updated' })
 })
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)
