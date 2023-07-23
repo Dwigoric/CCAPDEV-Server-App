@@ -28,8 +28,7 @@ router.put('/:postId', async (req, res, next) => {
             image: user.image
         },
         body,
-        postId, 
-        body,  
+        postId,
         parentCommentId
     }
 
@@ -45,25 +44,11 @@ router.put('/:postId', async (req, res, next) => {
 
 router.get('/:postId', async (req, res, next) => {
     // Return if `comments` collection doesn't exist
-    if (!(await mongo.hasTable('comments')))
-        return res.status(200).json({ comments: [], loadedAll: true })
+    if (!(await mongo.hasTable('comments'))) return res.status(200).json({ comments: [] })
 
-    // Use `last` and `limit` query param to paginate
-    const { last, limit } = req.query
+    const comments = await mongo.getManyBy('comments', 'postId', req.params.postId)
 
-    const comments = await mongo.getPaginated(
-        'comments',
-        !limit || Number(limit) > 20 ? 20 : Number(limit),
-        {
-            key: 'date',
-            value: Number(last)
-        }
-    )
-
-    return res.status(206).json({
-        comments,
-        loadedAll: (await mongo.findOne('comments'))?.date === comments[comments.length - 1]?.date
-    })
+    return res.status(200).json({ comments })
 })
 
 router.get('/:postId/search', async (req, res, next) => {
