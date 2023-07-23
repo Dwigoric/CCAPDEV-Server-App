@@ -16,6 +16,7 @@ const debug = debugLogger('compact-donuts-server-app:server')
  */
 
 dotenv.config()
+if (!process.env.PORT) console.warn('PORT not set. The default value is 3000')
 const port = normalizePort(process.env.PORT || '3000')
 app.set('port', port)
 

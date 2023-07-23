@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.put('/', async (req, res, next) => {
+router.put('/:postId', async (req, res, next) => {
     if (!(await mongo.hasTable('comments'))) {
         await mongo.createTable('comments')
         // Create text index for search. Include `title` and `body` fields
@@ -15,7 +15,7 @@ router.put('/', async (req, res, next) => {
         await mongo.db.createIndex('comments', { date: -1 })
     }
 
-    const { userId, body } = req.body
+    const { userId, body, postId, parentCommentId } = req.body
 
     const user = await mongo.get('users', userId)
     delete user.password
@@ -28,8 +28,8 @@ router.put('/', async (req, res, next) => {
             image: user.image
         },
         body,
-        date: Date.now(),
-        reactions: 0
+        postId,
+        parentCommentId
     }
 
     try {
@@ -42,30 +42,16 @@ router.put('/', async (req, res, next) => {
     return res.status(201).json({ comment, message: 'Comment created' })
 })
 
-router.get('/', async (req, res, next) => {
+router.get('/:postId', async (req, res, next) => {
     // Return if `comments` collection doesn't exist
-    if (!(await mongo.hasTable('comments')))
-        return res.status(200).json({ comments: [], loadedAll: true })
+    if (!(await mongo.hasTable('comments'))) return res.status(200).json({ comments: [] })
 
-    // Use `last` and `limit` query param to paginate
-    const { last, limit } = req.query
+    const comments = await mongo.getManyBy('comments', 'postId', req.params.postId)
 
-    const comments = await mongo.getPaginated(
-        'comments',
-        !limit || Number(limit) > 20 ? 20 : Number(limit),
-        {
-            key: 'date',
-            value: Number(last)
-        }
-    )
-
-    return res.status(206).json({
-        comments,
-        loadedAll: (await mongo.findOne('comments'))?.date === comments[comments.length - 1]?.date
-    })
+    return res.status(200).json({ comments })
 })
 
-router.get('/search', async (req, res, next) => {
+router.get('/:postId/search', async (req, res, next) => {
     const { q } = req.query
 
     if (!q) return next()
@@ -82,7 +68,7 @@ router.get('/search', async (req, res, next) => {
     }
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)
@@ -91,7 +77,7 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ comment, message: 'Comment found' })
 })
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const { title, body } = req.body
@@ -115,7 +101,7 @@ router.patch('/:id', async (req, res, next) => {
     return res.status(200).json({ comment: updatedcomment, message: 'Comment updated' })
 })
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)

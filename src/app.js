@@ -19,11 +19,13 @@ import votesRouter from './routes/votes.js'
 
 const app = express()
 
+if (!process.env.FRONTEND_URL)
+    console.warn('FRONTEND_URL not set. The default value is http://localhost:5173')
+
 // Configure CORS
 app.use(
     cors({
-        origin:
-            process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost',
+        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
         optionsSuccessStatus: 200
     })
 )

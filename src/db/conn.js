@@ -10,6 +10,8 @@ class MongoController {
     }
 
     async init() {
+        if (!mongodb.connectionString)
+            throw new Error('MongoDB connection string not provided. Check your .env file.')
         const mongoClient = await Mongo.connect(mongodb.connectionString, mongodb.options)
         this.db = mongoClient.db(mongodb.name)
     }
@@ -83,6 +85,17 @@ class MongoController {
 
     get(table, id) {
         return this.db.collection(table).findOne(resolveQuery(id))
+    }
+
+    getBy(table, key, value) {
+        return this.db.collection(table).findOne({ [key]: value })
+    }
+
+    getManyBy(table, key, value) {
+        return this.db
+            .collection(table)
+            .find({ [key]: value })
+            .toArray()
     }
 
     findOne(table, query) {
