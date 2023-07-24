@@ -13,11 +13,15 @@ router.put('/:postId', async (req, res, next) => {
     if (!user) return res.status(400).json({ error: true, message: 'Comment user is required' })
     if (!postId) return res.status(400).json({ error: true, message: 'Comment postId is required' })
 
+    if (!(await mongo.has('posts', postId)))
+        return res.status(404).json({ error: true, message: 'Post not found' })
+
     try {
         await mongo.create('comments', generatedId, {
             body,
             user,
             postId,
+            deleted: false,
             parentCommentId: parentCommentId || null
         })
     } catch (err) {
@@ -94,7 +98,12 @@ router.delete('/:postId/:id', async (req, res, next) => {
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
     try {
-        await mongo.delete('comments', id)
+        await mongo.update('comments', id, {
+            ...comment,
+            body: '[deleted]',
+            deleted: true,
+            user: null
+        })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
