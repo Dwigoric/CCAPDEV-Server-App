@@ -62,8 +62,7 @@ router.get('/:id', async (req, res) => {
     try {
         const voteRecord = await mongo.findOne('votes', { postId, userId })
 
-        // If there is no vote record,
-        // the user has not voted on this post
+        // If there is no vote record, the user has not voted on this post
         let vote
         if (!voteRecord) {
             vote = 0
@@ -77,7 +76,7 @@ router.get('/:id', async (req, res) => {
                 { $match: { postId } },
                 { $group: { _id: null, reactions: { $sum: '$vote' } } }
             ])
-            .then((result) => result[0])
+            .then((result) => result[0] || { reactions: 0 })
 
         return res.status(200).json({ message: 'Votes retrieved', userVote: vote, reactions })
     } catch (err) {
