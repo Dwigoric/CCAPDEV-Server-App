@@ -192,11 +192,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/user/:id', async (req, res) => {
     const { id } = req.params
 
-    const posts = await mongo.db
-        .collection('posts')
-        .find({ 'user.id': id })
-        .sort({ date: 1 })
-        .toArray()
+    const posts = await mongo.db.collection('posts').find({ user: id }).sort({ date: 1 }).toArray()
 
     return res.status(200).json({ posts })
 })
