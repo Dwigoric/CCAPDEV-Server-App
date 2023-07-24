@@ -30,7 +30,8 @@ router.put('/', async (req, res, next) => {
         title,
         body,
         image,
-        date: Date.now()
+        date: Date.now(),
+        deleted: false
     }
 
     try {
@@ -123,7 +124,15 @@ router.delete('/:id', async (req, res, next) => {
     if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
     try {
-        await mongo.delete('posts', id)
+        await mongo.update('posts', id, {
+            deleted: true,
+            body: 'This post has been deleted',
+            title: 'Deleted',
+            user: {
+                id: 'deleted',
+                username: 'deleted'
+            }
+        })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }

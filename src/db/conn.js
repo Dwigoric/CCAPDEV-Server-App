@@ -100,7 +100,7 @@ class MongoController {
                 .toArray()
         return this.db
             .collection(table)
-            .find({ [last.key]: { $lt: last.value } })
+            .find({ [last.key]: { $lt: last.value }, deleted: false })
             .sort({ [last.key]: -1 })
             .limit(limit)
             .toArray()
