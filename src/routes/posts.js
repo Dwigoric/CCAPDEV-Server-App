@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.put('/', async (req, res, next) => {
+router.put('/', async (req, res) => {
     if (!(await mongo.hasTable('posts'))) {
         await mongo.createTable('posts')
         // Create text index for search. Include `title` and `body` fields
@@ -44,7 +44,7 @@ router.put('/', async (req, res, next) => {
     return res.status(201).json({ post, message: 'Post created' })
 })
 
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res) => {
     // Return if `posts` collection doesn't exist
     if (!(await mongo.hasTable('posts')))
         return res.status(200).json({ posts: [], loadedAll: true })
@@ -84,7 +84,7 @@ router.get('/search', async (req, res, next) => {
     }
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res) => {
     const { id } = req.params
 
     const post = await mongo.get('posts', id)
@@ -93,7 +93,7 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ post, message: 'Post found' })
 })
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', async (req, res) => {
     const { id } = req.params
 
     const { title, body } = req.body
@@ -117,7 +117,7 @@ router.patch('/:id', async (req, res, next) => {
     return res.status(200).json({ post: updatedPost, message: 'Post updated' })
 })
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params
 
     const post = await mongo.get('posts', id)
@@ -140,7 +140,7 @@ router.delete('/:id', async (req, res, next) => {
     return res.status(200).json({ message: 'Post deleted' })
 })
 
-router.get('/user/:id', async (req, res, next) => {
+router.get('/user/:id', async (req, res) => {
     const { id } = req.params
 
     const posts = await mongo.db

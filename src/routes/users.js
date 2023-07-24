@@ -5,7 +5,7 @@ import { mergeObjects } from '@sapphire/utilities'
 
 const router = express.Router()
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', async (req, res) => {
     if (!(await mongo.hasTable('users')))
         return res.status(404).json({ error: true, message: 'User not found' })
 
@@ -22,7 +22,7 @@ router.post('/login', async (req, res, next) => {
     return res.status(200).json({ user, message: 'Login successful' })
 })
 
-router.put('/register', async (req, res, next) => {
+router.put('/register', async (req, res) => {
     if (!(await mongo.hasTable('users'))) await mongo.createTable('users')
 
     const { username, password } = req.body
@@ -54,7 +54,7 @@ router.put('/register', async (req, res, next) => {
     return res.status(201).json({ user, message: 'Register successful' })
 })
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res) => {
     const { id } = req.params
     const user = await mongo.get('users', id)
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
@@ -65,7 +65,7 @@ router.get('/:id', async (req, res, next) => {
     return res.status(200).json({ user, message: 'User found' })
 })
 
-router.get('/username/:username', async (req, res, next) => {
+router.get('/username/:username', async (req, res) => {
     const { username } = req.params
     const user = await mongo.getBy('users', 'username', username)
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
@@ -76,7 +76,7 @@ router.get('/username/:username', async (req, res, next) => {
     return res.status(200).json({ user, message: 'User found' })
 })
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', async (req, res) => {
     const { id } = req.params
     const user = await mongo.get('users', id)
 

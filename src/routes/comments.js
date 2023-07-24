@@ -4,7 +4,7 @@ import { v5 as uuidV5 } from 'uuid'
 
 const router = express.Router()
 
-router.put('/:postId', async (req, res, next) => {
+router.put('/:postId', async (req, res) => {
     const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
     const { body, user, postId, parentCommentId } = req.body
@@ -38,7 +38,7 @@ router.put('/:postId', async (req, res, next) => {
     return res.status(201).json({ comment, message: 'Comment created' })
 })
 
-router.get('/:postId', async (req, res, next) => {
+router.get('/:postId', async (req, res) => {
     // Return if `comments` collection doesn't exist
     if (!(await mongo.hasTable('comments'))) return res.status(200).json({ comments: [] })
 
@@ -56,7 +56,7 @@ router.get('/:postId', async (req, res, next) => {
     return res.status(200).json({ comments })
 })
 
-router.get('/:postId/:id', async (req, res, next) => {
+router.get('/:postId/:id', async (req, res) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)
@@ -72,7 +72,7 @@ router.get('/:postId/:id', async (req, res, next) => {
     return res.status(200).json({ comment, message: 'Comment found' })
 })
 
-router.patch('/:postId/:id', async (req, res, next) => {
+router.patch('/:postId/:id', async (req, res) => {
     const { id } = req.params
 
     const { body } = req.body
@@ -98,7 +98,7 @@ router.patch('/:postId/:id', async (req, res, next) => {
         .json({ comment: { ...comment, ...updatedComment }, message: 'Comment updated' })
 })
 
-router.delete('/:postId/:id', async (req, res, next) => {
+router.delete('/:postId/:id', async (req, res) => {
     const { id } = req.params
 
     const comment = await mongo.get('comments', id)
