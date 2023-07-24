@@ -44,7 +44,6 @@ router.put('/', upload.single('image'), async (req, res) => {
     const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
     // Get image path
-    console.log(req.file)
     const domain = `${req.protocol}://${req.get('host')}`
     const imagePath = req.file ? `${domain}/images/posts/${req.file.filename}` : null
 
