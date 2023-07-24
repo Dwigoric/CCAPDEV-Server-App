@@ -1,9 +1,20 @@
 import express from 'express'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
-import { mergeObjects } from '@sapphire/utilities'
+import multer from 'multer'
 
 const router = express.Router()
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/images/posts')
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`)
+    }
+})
+
+const upload = multer({ storage })
 
 router.post('/login', async (req, res) => {
     if (!(await mongo.hasTable('users')))
@@ -76,24 +87,32 @@ router.get('/username/:username', async (req, res) => {
     return res.status(200).json({ user, message: 'User found' })
 })
 
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', upload.single('avatar'), async (req, res) => {
     const { id } = req.params
+    const { username, description } = req.body
+
+    if (!(await mongo.has('users', id)))
+        return res.status(404).json({ error: true, message: 'User not found' })
+
+    // Check duplicate username
+    const exists = await mongo.findOne('users', { username })
+    if (exists && exists._id !== id)
+        return res.status(400).json({ error: true, message: 'Username already exists' })
+
+    const domain = `${req.protocol}://${req.get('host')}`
+    const imagePath = req.file
+        ? `${domain}/images/posts/${req.file.filename}`
+        : `https://robohash.org/${username}`
+    await mongo.update('users', id, {
+        username,
+        description,
+        image: imagePath
+    })
+
+    // Retrieve the updated user
     const user = await mongo.get('users', id)
-
-    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
-    delete user.password
     delete user._id
-
-    const { username, image, description } = req.body
-    await mongo.update(
-        'users',
-        id,
-        mergeObjects(user, {
-            username,
-            image,
-            description
-        })
-    )
+    delete user.password
 
     // Send a JSON response with 200 OK
     return res.status(200).json({ user, message: 'User updated' })
