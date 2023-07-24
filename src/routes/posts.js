@@ -1,10 +1,22 @@
 import express from 'express'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
+import multer from 'multer'
 
 const router = express.Router()
 
-router.put('/', async (req, res) => {
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/images/posts')
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}_${file.originalname}`)
+    }
+})
+
+const upload = multer({ storage })
+
+router.put('/', upload.single('image'), async (req, res) => {
     // Create `posts` collection if it doesn't exist
     if (!(await mongo.hasTable('posts'))) {
         await mongo.createTable('posts')
@@ -16,7 +28,7 @@ router.put('/', async (req, res) => {
     }
 
     // Get fields
-    const { userId, title, body, image } = req.body
+    const { userId, title, body } = req.body
 
     // Validate fields
     if (!userId || !title || !body)
@@ -31,13 +43,18 @@ router.put('/', async (req, res) => {
     // Generate UUID v5 for post ID
     const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
+    // Get image path
+    console.log(req.file)
+    const domain = `${req.protocol}://${req.get('host')}`
+    const imagePath = req.file ? `${domain}/images/posts/${req.file.filename}` : null
+
     // Create post
     try {
         await mongo.create('posts', generatedId, {
             user: userId,
             title,
             body,
-            image: image || null,
+            image: imagePath,
             date: Date.now(),
             deleted: false
         })
