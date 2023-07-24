@@ -6,11 +6,10 @@ import multer from 'multer'
 const router = express.Router()
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/images/posts')
-    },
+    destination: 'public/images/posts',
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}_${file.originalname}`)
+        // Use UUID v5 to generate a unique filename
+        cb(null, `${uuidV5(Date.now().toString(), uuidV5.URL)}_${file.originalname}`)
     }
 })
 
