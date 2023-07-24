@@ -99,15 +99,16 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
     if (exists && exists._id !== id)
         return res.status(400).json({ error: true, message: 'Username already exists' })
 
-    const domain = `${req.protocol}://${req.get('host')}`
-    const imagePath = req.file
-        ? `${domain}/images/posts/${req.file.filename}`
-        : `https://robohash.org/${username}`
-    await mongo.update('users', id, {
-        username,
-        description,
-        image: imagePath
-    })
+    const updatedUser = {}
+
+    if (username) updatedUser.username = username
+    if (description) updatedUser.description = description
+    if (req.file) {
+        const domain = `${req.protocol}://${req.get('host')}`
+        updatedUser.image = `${domain}/images/posts/${req.file.filename}`
+    }
+
+    await mongo.update('users', id, updatedUser)
 
     // Retrieve the updated user
     const user = await mongo.get('users', id)
