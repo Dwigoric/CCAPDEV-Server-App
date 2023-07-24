@@ -5,42 +5,54 @@ import { v5 as uuidV5 } from 'uuid'
 const router = express.Router()
 
 router.put('/', async (req, res) => {
+    // Create `posts` collection if it doesn't exist
     if (!(await mongo.hasTable('posts'))) {
         await mongo.createTable('posts')
         // Create text index for search. Include `title` and `body` fields
-        // Azure Cosmos DB supports only one text index per collection, so catch the error
-        await mongo.db.createIndex('posts', { title: 'text', body: 'text' }).catch(() => {})
+        await mongo.db.createIndex('posts', { title: 'text', body: 'text' })
 
         // Create index for sorting by date
         await mongo.db.createIndex('posts', { date: -1 })
     }
 
+    // Get fields
     const { userId, title, body, image } = req.body
 
+    // Validate fields
+    if (!userId || !title || !body)
+        return res.status(400).json({ error: true, message: 'Missing fields' })
+
+    // Verify user exists
     const user = await mongo.get('users', userId)
-    delete user.password
+    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
     delete user._id
+    delete user.password
 
-    const post = {
-        user: {
-            id: user.id,
-            username: user.username,
-            image: user.image
-        },
-        title,
-        body,
-        image,
-        date: Date.now(),
-        deleted: false
-    }
+    // Generate UUID v5 for post ID
+    const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
+    // Create post
     try {
-        await mongo.create('posts', uuidV5(Date.now().toString(), uuidV5.URL), post)
+        await mongo.create('posts', generatedId, {
+            user: userId,
+            title,
+            body,
+            image: image || null,
+            date: Date.now(),
+            deleted: false
+        })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
 
+    // Get post
+    const post = await mongo.get('posts', generatedId)
     delete post._id
+
+    // Add user to post
+    post.user = user
+
+    // Return post
     return res.status(201).json({ post, message: 'Post created' })
 })
 
@@ -61,9 +73,30 @@ router.get('/', async (req, res) => {
         }
     )
 
+    // Add user to each post
+    for (const post of posts) {
+        delete post._id
+
+        if (post.deleted) {
+            post.user = {
+                id: 'deleted',
+                username: 'deleted'
+            }
+            continue
+        }
+
+        const user = await mongo.get('users', post.user)
+        delete user._id
+        delete user.password
+        post.user = user
+    }
+
+    // Return posts
     return res.status(206).json({
         posts,
-        loadedAll: (await mongo.findOne('posts'))?.date === posts[posts.length - 1]?.date
+        loadedAll:
+            posts.length === 0 ||
+            (await mongo.findOne('posts'))?.date === posts[posts.length - 1]?.date
     })
 })
 
@@ -72,16 +105,22 @@ router.get('/search', async (req, res, next) => {
 
     if (!q) return next()
 
-    try {
-        const posts = await mongo.db
-            .collection('posts')
-            .find({ $text: { $search: decodeURIComponent(q) } })
-            .toArray()
+    const posts = await mongo.db
+        .collection('posts')
+        .find({ $text: { $search: decodeURIComponent(q) }, deleted: false })
+        .toArray()
 
-        return res.status(200).json({ posts })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
+    // Add user to each post
+    for (const post of posts) {
+        delete post._id
+        const user = await mongo.get('users', post.user)
+        delete user._id
+        delete user.password
+        post.user = user
     }
+
+    // Return posts
+    return res.status(200).json({ posts })
 })
 
 router.get('/:id', async (req, res) => {
@@ -89,6 +128,20 @@ router.get('/:id', async (req, res) => {
 
     const post = await mongo.get('posts', id)
     if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+
+    delete post._id
+
+    if (post.deleted) {
+        post.user = {
+            id: 'deleted',
+            username: 'deleted'
+        }
+    } else {
+        const user = await mongo.get('users', post.user)
+        delete user._id
+        delete user.password
+        post.user = user
+    }
 
     return res.status(200).json({ post, message: 'Post found' })
 })
@@ -102,7 +155,6 @@ router.patch('/:id', async (req, res) => {
     if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
     const updatedPost = {
-        ...post,
         title: title || post.title,
         body: body || post.body,
         edited: Date.now()
@@ -114,7 +166,7 @@ router.patch('/:id', async (req, res) => {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(200).json({ post: updatedPost, message: 'Post updated' })
+    return res.status(200).json({ post: { ...post, ...updatedPost }, message: 'Post updated' })
 })
 
 router.delete('/:id', async (req, res) => {
@@ -128,10 +180,7 @@ router.delete('/:id', async (req, res) => {
             deleted: true,
             body: 'This post has been deleted',
             title: 'Deleted',
-            user: {
-                id: 'deleted',
-                username: 'deleted'
-            }
+            user: null
         })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
