@@ -5,13 +5,26 @@ import { v5 as uuidV5 } from 'uuid'
 const router = express.Router()
 
 router.put('/:postId', async (req, res, next) => {
+    const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
+
+    const { body, user, postId, parentCommentId } = req.body
+
+    if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+    if (!user) return res.status(400).json({ error: true, message: 'Comment user is required' })
+    if (!postId) return res.status(400).json({ error: true, message: 'Comment postId is required' })
+
     try {
-        await mongo.create('comments', uuidV5(Date.now().toString(), uuidV5.URL), req.body)
+        await mongo.create('comments', generatedId, {
+            body,
+            user,
+            postId,
+            parentCommentId: parentCommentId || null
+        })
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(201).json({ comment: req.body, message: 'Comment created' })
+    return res.status(201).json({ generatedId, message: 'Comment created' })
 })
 
 router.get('/:postId', async (req, res, next) => {
@@ -54,21 +67,24 @@ router.patch('/:postId/:id', async (req, res, next) => {
 
     const { body } = req.body
 
+    if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+
     const comment = await mongo.get('comments', id)
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
-    const updatedcomment = {
+    const updatedComment = {
         ...comment,
-        body: body || comment.body
+        body: body || comment.body,
+        edited: Date.now()
     }
 
     try {
-        await mongo.update('comments', id, updatedcomment)
+        await mongo.update('comments', id, updatedComment)
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(200).json({ comment: updatedcomment, message: 'Comment updated' })
+    return res.status(200).json({ comment: updatedComment, message: 'Comment updated' })
 })
 
 router.delete('/:postId/:id', async (req, res, next) => {
