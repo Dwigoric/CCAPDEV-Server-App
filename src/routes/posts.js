@@ -211,6 +211,15 @@ router.get('/user/:id', async (req, res) => {
 
     const posts = await mongo.db.collection('posts').find({ user: id }).sort({ date: 1 }).toArray()
 
+    // Add user to each post
+    for (const post of posts) {
+        delete post._id
+        const user = await mongo.get('users', post.user)
+        delete user._id
+        delete user.password
+        post.user = user
+    }
+
     return res.status(200).json({ posts })
 })
 
