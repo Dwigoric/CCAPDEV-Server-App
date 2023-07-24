@@ -30,8 +30,7 @@ router.put('/', async (req, res, next) => {
         title,
         body,
         image,
-        date: Date.now(),
-        reactions: 0
+        date: Date.now()
     }
 
     try {

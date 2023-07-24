@@ -4,72 +4,84 @@ import { mongo } from '../db/conn.js'
 const router = express.Router()
 
 router.post('/:id', async (req, res) => {
-    const { id } = req.params
+    const { id: postId } = req.params
     const { userId, vote } = req.body
 
-    // Find the user
-    const user = await mongo.get('users', userId)
-    if (!user) {
-        return res.status(404).json({ error: true, message: 'User not found' })
+    if (typeof userId === 'undefined') {
+        return res.status(400).json({ error: true, message: 'Missing userId' })
     }
+
+    if (isNaN(vote)) {
+        return res.status(400).json({ error: true, message: 'Missing vote' })
+    }
+
+    // Find the user
+    if (!(await mongo.has('users', userId)))
+        return res.status(404).json({ error: true, message: 'User not found' })
 
     // Find the post
-    const post = await mongo.get('posts', { id: id })
-    if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+    if (!(await mongo.has('posts', postId)))
+        return res.status(404).json({ error: true, message: 'Post not found' })
 
-    //votesIndex
-    const votesIndex = {
-        userId: userId,
-        reactions: vote
-    }
-    // Create a new  table
+    // Create a new table if it doesn't exist
     if (!(await mongo.hasTable('votes'))) {
         await mongo.createTable('votes')
     }
 
-    const isVoted = await mongo.findOne('votes', { id: id, userId: userId })
-
-    let newReactions = post.reactions
-
-    if (isVoted) {
-        if (isVoted.reactions === 1) {
-            newReactions -= 1
-        } else if (isVoted.reactions === -1) {
-            newReactions += 1
-        }
-    }
-
-    newReactions += vote
-
-    try {
-        await mongo.create('votes', id, votesIndex)
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+    const votesIndex = { postId, userId }
 
     const updatedVote = {
-        ...post,
-        reactions: newReactions
+        postId,
+        userId,
+        vote
     }
+
     try {
-        await mongo.update('posts', id, updatedVote)
+        // If vote is 0, delete the vote record
+        if (vote === 0) {
+            await mongo.deleteRaw('votes', votesIndex)
+            return res.status(200).json({ message: 'Voted' })
+        } else {
+            await mongo.updateRaw('votes', votesIndex, updatedVote, true)
+        }
     } catch (err) {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(200).json({ post: updatedVote, message: 'Vote changed' })
+    return res.status(200).json({ message: 'Voted' })
 })
 
 router.get('/:id', async (req, res) => {
-    const { id } = req.params
+    const { id: postId } = req.params
     const { userId } = req.query
 
-    const isVoted = await mongo.findOne('votes', { id: id, userId: userId })
+    if (typeof userId === 'undefined') {
+        return res.status(400).json({ error: true, message: 'Missing userId' })
+    }
 
-    if (isVoted) {
-        return res.status(100).json({ reactions: isVoted.reactions, message: 'Votes retrieved' })
-    } else {
-        return res.status(100).json({ reactions: 0, message: 'No votes yet' })
+    try {
+        const voteRecord = await mongo.findOne('votes', { postId, userId })
+
+        // If there is no vote record,
+        // the user has not voted on this post
+        let vote
+        if (!voteRecord) {
+            vote = 0
+        } else {
+            vote = voteRecord['vote']
+        }
+
+        // Aggregate the votes
+        const { reactions } = await mongo
+            .aggregate('votes', [
+                { $match: { postId } },
+                { $group: { _id: null, reactions: { $sum: '$vote' } } }
+            ])
+            .then((result) => result[0])
+
+        return res.status(200).json({ message: 'Votes retrieved', userVote: vote, reactions })
+    } catch (err) {
+        return res.status(500).json({ error: true, message: err.message })
     }
 })
 export default router

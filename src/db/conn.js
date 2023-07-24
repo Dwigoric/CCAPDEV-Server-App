@@ -52,6 +52,33 @@ class MongoController {
         return this.db.collection(table).find({}, { _id: 0 }).toArray()
     }
 
+    getKeys(table) {
+        return this.db.collection(table).find({}, { id: 1, _id: 0 }).toArray()
+    }
+
+    aggregate(table, pipeline) {
+        return this.db.collection(table).aggregate(pipeline).toArray()
+    }
+
+    get(table, id) {
+        return this.db.collection(table).findOne(resolveQuery(id))
+    }
+
+    getBy(table, key, value) {
+        return this.db.collection(table).findOne({ [key]: value })
+    }
+
+    getManyBy(table, key, value) {
+        return this.db
+            .collection(table)
+            .find({ [key]: value })
+            .toArray()
+    }
+
+    findOne(table, query) {
+        return this.db.collection(table).findOne(query)
+    }
+
     getPaginated(
         table,
         limit,
@@ -79,29 +106,6 @@ class MongoController {
             .toArray()
     }
 
-    getKeys(table) {
-        return this.db.collection(table).find({}, { id: 1, _id: 0 }).toArray()
-    }
-
-    get(table, id) {
-        return this.db.collection(table).findOne(resolveQuery(id))
-    }
-
-    getBy(table, key, value) {
-        return this.db.collection(table).findOne({ [key]: value })
-    }
-
-    getManyBy(table, key, value) {
-        return this.db
-            .collection(table)
-            .find({ [key]: value })
-            .toArray()
-    }
-
-    findOne(table, query) {
-        return this.db.collection(table).findOne(query)
-    }
-
     has(table, id) {
         return this.get(table, id).then(Boolean)
     }
@@ -120,11 +124,25 @@ class MongoController {
         return this.db.collection(table).deleteOne(resolveQuery(id))
     }
 
+    deleteRaw(table, index) {
+        return this.db.collection(table).deleteOne(index)
+    }
+
     update(table, id, doc, upsert) {
         return this.db
             .collection(table)
             .updateOne(
                 resolveQuery(id),
+                { $set: isObject(doc) ? flatten(doc) : parseEngineInput(doc) },
+                { upsert: Boolean(upsert) }
+            )
+    }
+
+    updateRaw(table, index, doc, upsert) {
+        return this.db
+            .collection(table)
+            .updateOne(
+                index,
                 { $set: isObject(doc) ? flatten(doc) : parseEngineInput(doc) },
                 { upsert: Boolean(upsert) }
             )
