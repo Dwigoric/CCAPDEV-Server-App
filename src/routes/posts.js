@@ -95,7 +95,7 @@ router.get('/', async (req, res) => {
     return res.status(206).json({
         posts,
         loadedAll:
-            posts.length === 0 ||
+            posts.length < 20 ||
             (await mongo.findOne('posts'))?.date === posts[posts.length - 1]?.date
     })
 })
