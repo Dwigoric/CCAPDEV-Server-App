@@ -28,7 +28,14 @@ router.put('/:postId', async (req, res, next) => {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(201).json({ generatedId, message: 'Comment created' })
+    const comment = await mongo.get('comments', generatedId)
+    delete comment._id
+
+    comment.user = await mongo.get('users', comment.user)
+    delete comment.user._id
+    delete comment.user.password
+
+    return res.status(201).json({ comment, message: 'Comment created' })
 })
 
 router.get('/:postId', async (req, res, next) => {
@@ -37,24 +44,16 @@ router.get('/:postId', async (req, res, next) => {
 
     const comments = await mongo.getManyBy('comments', 'postId', req.params.postId)
 
-    return res.status(200).json({ comments })
-})
+    for (const comment of comments) {
+        delete comment._id
+        if (comment.deleted) continue
 
-router.get('/:postId/search', async (req, res, next) => {
-    const { q } = req.query
-
-    if (!q) return next()
-
-    try {
-        const comments = await mongo.db
-            .collection('comments')
-            .find({ $text: { $search: decodeURIComponent(q) } })
-            .toArray()
-
-        return res.status(200).json({ comments })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
+        comment.user = await mongo.get('users', comment.user)
+        delete comment.user._id
+        delete comment.user.password
     }
+
+    return res.status(200).json({ comments })
 })
 
 router.get('/:postId/:id', async (req, res, next) => {
@@ -62,6 +61,13 @@ router.get('/:postId/:id', async (req, res, next) => {
 
     const comment = await mongo.get('comments', id)
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
+    delete comment._id
+
+    if (!comment.deleted) {
+        comment.user = await mongo.get('users', comment.user)
+        delete comment.user._id
+        delete comment.user.password
+    }
 
     return res.status(200).json({ comment, message: 'Comment found' })
 })
@@ -77,8 +83,7 @@ router.patch('/:postId/:id', async (req, res, next) => {
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
     const updatedComment = {
-        ...comment,
-        body: body || comment.body,
+        body,
         edited: Date.now()
     }
 
@@ -88,7 +93,9 @@ router.patch('/:postId/:id', async (req, res, next) => {
         return res.status(500).json({ error: true, message: err.message })
     }
 
-    return res.status(200).json({ comment: updatedComment, message: 'Comment updated' })
+    return res
+        .status(200)
+        .json({ comment: { ...comment, ...updatedComment }, message: 'Comment updated' })
 })
 
 router.delete('/:postId/:id', async (req, res, next) => {
@@ -99,7 +106,6 @@ router.delete('/:postId/:id', async (req, res, next) => {
 
     try {
         await mongo.update('comments', id, {
-            ...comment,
             body: '[deleted]',
             deleted: true,
             user: null
