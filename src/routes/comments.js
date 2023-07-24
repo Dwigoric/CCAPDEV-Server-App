@@ -52,16 +52,14 @@ router.get('/:postId/:id', async (req, res, next) => {
 router.patch('/:postId/:id', async (req, res, next) => {
     const { id } = req.params
 
-    const { title, body } = req.body
+    const { body } = req.body
 
     const comment = await mongo.get('comments', id)
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
     const updatedcomment = {
         ...comment,
-        title: title || comment.title,
-        body: body || comment.body,
-        edited: Date.now()
+        body: body || comment.body
     }
 
     try {
