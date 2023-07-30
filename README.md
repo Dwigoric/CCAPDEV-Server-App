@@ -43,9 +43,20 @@ Change the value to Vue's given URL when running the frontend in development,
 i.e., `http://localhost:5173`.
 
 ### Database
-This variable is **required** to be set. You can change the database the server connects to
+This variable is **highly recommended** to be set. You can change the database the server connects to
 by setting the `MONGODB_URI` environment variable.
 This variable should contain a MongoDB connection string.
+
+#### The config file's mongodb.name property
+The `src/config.js` file contains a `mongodb.name` property.
+This property is used to specify the name of the database.
+If the `.env` file's `MONGODB_URI` variable contains a database name,
+the `mongodb.name` property will be prioritized.
+If the `.env` file's `MONGODB_URI` variable does not contain a database name,
+the `mongodb.name` property will be used as the database name.
+If the `mongodb.name` property is not set,
+and the `.env` file's `MONGODB_URI` variable does not contain a database name,
+the database name will be set to `test`.
 
 ## API
 The API is accessible through the root of the server.
