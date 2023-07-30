@@ -31,8 +31,6 @@ passport.use(
             passwordField: 'password'
         },
         async function verify(username, password, done) {
-            const salt = crypto.randomBytes(16).toString('hex')
-
             const cb = async function (err, hashedPassword) {
                 if (err) {
                     return done(err)
@@ -61,7 +59,8 @@ passport.use(
                 }
             }
 
-            crypto.pbkdf2(password, salt, 100000, 64, 'sha3-256', cb)
+            const salt = crypto.randomBytes(64).toString('hex')
+            crypto.pbkdf2(password, salt, 100000, 128, 'sha3-256', cb)
         }
     )
 )
@@ -104,7 +103,7 @@ passport.use(
                 // Validate password using crypto
                 const validate =
                     crypto
-                        .pbkdf2Sync(password, user.salt, 100000, 64, 'sha3-256')
+                        .pbkdf2Sync(password, user.salt, 100000, 128, 'sha3-256')
                         .toString('hex') === user.password
 
                 if (!validate) {
@@ -114,6 +113,7 @@ passport.use(
                 // Delete password and salt from user object
                 delete user.password
                 delete user.salt
+                delete user._id
 
                 return done(null, user, { message: 'Logged in Successfully' })
             } catch (error) {
