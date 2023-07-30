@@ -1,54 +1,52 @@
 import express from 'express'
 import { mongo } from '../db/conn.js'
+import passport from 'passport'
 
 const router = express.Router()
 
 router.post('/:id', async (req, res) => {
-    const { id: postId } = req.params
-    const { userId, vote } = req.body
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    if (typeof userId === 'undefined') {
-        return res.status(400).json({ error: true, message: 'Missing userId' })
-    }
+        const { id: postId } = req.params
+        const { vote } = req.body
 
-    if (isNaN(vote)) {
-        return res.status(400).json({ error: true, message: 'Missing vote' })
-    }
-
-    // Find the user
-    if (!(await mongo.has('users', userId)))
-        return res.status(404).json({ error: true, message: 'User not found' })
-
-    // Find the post
-    if (!(await mongo.has('posts', postId)))
-        return res.status(404).json({ error: true, message: 'Post not found' })
-
-    // Create a new table if it doesn't exist
-    if (!(await mongo.hasTable('votes'))) {
-        await mongo.createTable('votes')
-    }
-
-    const votesIndex = { postId, userId }
-
-    const updatedVote = {
-        postId,
-        userId,
-        vote
-    }
-
-    try {
-        // If vote is 0, delete the vote record
-        if (vote === 0) {
-            await mongo.deleteRaw('votes', votesIndex)
-            return res.status(200).json({ message: 'Voted' })
-        } else {
-            await mongo.updateRaw('votes', votesIndex, updatedVote, true)
+        if (isNaN(vote)) {
+            return res.status(400).json({ error: true, message: 'Missing vote' })
         }
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
 
-    return res.status(200).json({ message: 'Voted' })
+        // Find the post
+        if (!(await mongo.has('posts', postId)))
+            return res.status(404).json({ error: true, message: 'Post not found' })
+
+        // Create a new table if it doesn't exist
+        if (!(await mongo.hasTable('votes'))) {
+            await mongo.createTable('votes')
+        }
+
+        const votesIndex = { postId, userId }
+
+        const updatedVote = {
+            postId,
+            userId,
+            vote
+        }
+
+        try {
+            // If vote is 0, delete the vote record
+            if (vote === 0) {
+                await mongo.deleteRaw('votes', votesIndex)
+                return res.status(200).json({ message: 'Voted' })
+            } else {
+                await mongo.updateRaw('votes', votesIndex, updatedVote, true)
+            }
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
+
+        return res.status(200).json({ message: 'Voted' })
+    })(req, res)
 })
 
 router.get('/:id', async (req, res) => {

@@ -40,15 +40,15 @@ router.get('/username/:username', async (req, res) => {
     return res.status(200).json({ user, message: 'User found' })
 })
 
-router.patch(
-    '/:id',
-    passport.authenticate('jwt', { session: false }, null),
-    upload.single('avatar'),
-    async (req, res) => {
-        const { id } = req.params
+router.patch('/:id', upload.single('avatar'), async (req, res) => {
+    passport.authenticate('jwt', { session: false }, async (err, id, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
+
+        const { id: userId } = req.params
 
         // Check if user is trying to update their own profile
-        if (req.user.id !== id) return res.status(403).json({ error: true, message: 'Forbidden' })
+        if (userId !== id) return res.status(403).json({ error: true, message: 'Forbidden' })
 
         const { username, description } = req.body
 
@@ -79,7 +79,7 @@ router.patch(
 
         // Send a JSON response with 200 OK
         return res.status(200).json({ user, message: 'User updated' })
-    }
-)
+    })(req, res)
+})
 
 export default router

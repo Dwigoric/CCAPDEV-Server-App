@@ -135,8 +135,6 @@ passport.use(
  * 1. `done(null, user)` - to authenticate `user`.
  * 2. `done(null, false)` - to deny access.
  * 3. `done(err)` - to indicate an error.
- *
- * Note that `user` must be an object with a `username` and `password` property.
  */
 passport.use(
     'jwt',
@@ -147,7 +145,16 @@ passport.use(
         },
         async function verify(token, done) {
             try {
-                return done(null, token.user)
+                if (!(await mongo.hasTable('users')))
+                    return done(null, false, { message: 'User not found' })
+
+                if (!token.id) return done(null, false, { message: 'User not found' })
+
+                const user = await mongo.get('users', token.id)
+
+                if (!user) return done(null, false, { message: 'User not found' })
+
+                return done(null, token.id)
             } catch (error) {
                 return done(error)
             }

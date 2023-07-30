@@ -5,12 +5,6 @@ import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 import cors from 'cors'
 import 'dotenv/config'
-import passport from 'passport'
-import session from 'express-session'
-import con_sqlite3 from 'connect-sqlite3'
-
-// SQLite3 database
-const SQLiteStore = con_sqlite3(session)
 
 // MongoDB
 import { mongo } from './db/conn.js'

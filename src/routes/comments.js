@@ -1,41 +1,47 @@
 import express from 'express'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
+import passport from 'passport'
 
 const router = express.Router()
 
-router.put('/:postId', async (req, res) => {
-    const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
+router.put('/:postId', passport.authenticate('jwt', { session: false }, null), async (req, res) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    const { body, user, postId, parentCommentId } = req.body
+        const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
-    if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
-    if (!user) return res.status(400).json({ error: true, message: 'Comment user is required' })
-    if (!postId) return res.status(400).json({ error: true, message: 'Comment postId is required' })
+        const { body, postId, parentCommentId } = req.body
 
-    if (!(await mongo.has('posts', postId)))
-        return res.status(404).json({ error: true, message: 'Post not found' })
+        if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+        if (!postId)
+            return res.status(400).json({ error: true, message: 'Comment postId is required' })
 
-    try {
-        await mongo.create('comments', generatedId, {
-            body,
-            user,
-            postId,
-            deleted: false,
-            parentCommentId: parentCommentId || null
-        })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        if (!(await mongo.has('posts', postId)))
+            return res.status(404).json({ error: true, message: 'Post not found' })
 
-    const comment = await mongo.get('comments', generatedId)
-    delete comment._id
+        try {
+            await mongo.create('comments', generatedId, {
+                body,
+                user,
+                postId,
+                deleted: false,
+                parentCommentId: parentCommentId || null
+            })
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
 
-    comment.user = await mongo.get('users', comment.user)
-    delete comment.user._id
-    delete comment.user.password
+        const comment = await mongo.get('comments', generatedId)
+        delete comment._id
 
-    return res.status(201).json({ comment, message: 'Comment created' })
+        comment.user = await mongo.get('users', comment.user)
+        delete comment.user._id
+        delete comment.user.password
+
+        return res.status(201).json({ comment, message: 'Comment created' })
+    })(req, res)
 })
 
 router.get('/:postId', async (req, res) => {
@@ -73,48 +79,66 @@ router.get('/:postId/:id', async (req, res) => {
 })
 
 router.patch('/:postId/:id', async (req, res) => {
-    const { id } = req.params
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    const { body } = req.body
+        const { id } = req.params
 
-    if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+        const { body } = req.body
 
-    const comment = await mongo.get('comments', id)
-    if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
+        if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
 
-    const updatedComment = {
-        body,
-        edited: Date.now()
-    }
+        const comment = await mongo.get('comments', id)
+        if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
-    try {
-        await mongo.update('comments', id, updatedComment)
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        // Check if user is trying to update their own comment
+        if (userId !== comment.user)
+            return res.status(403).json({ error: true, message: 'Forbidden' })
 
-    return res
-        .status(200)
-        .json({ comment: { ...comment, ...updatedComment }, message: 'Comment updated' })
+        const updatedComment = {
+            body,
+            edited: Date.now()
+        }
+
+        try {
+            await mongo.update('comments', id, updatedComment)
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
+
+        return res
+            .status(200)
+            .json({ comment: { ...comment, ...updatedComment }, message: 'Comment updated' })
+    })(req, res)
 })
 
 router.delete('/:postId/:id', async (req, res) => {
-    const { id } = req.params
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    const comment = await mongo.get('comments', id)
-    if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
+        const { id } = req.params
 
-    try {
-        await mongo.update('comments', id, {
-            body: '[deleted]',
-            deleted: true,
-            user: null
-        })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        const comment = await mongo.get('comments', id)
+        if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
-    return res.status(200).json({ message: 'Comment deleted' })
+        // Check if user is trying to delete their own comment
+        if (userId !== comment.user)
+            return res.status(403).json({ error: true, message: 'Forbidden' })
+
+        try {
+            await mongo.update('comments', id, {
+                body: '[deleted]',
+                deleted: true,
+                user: null
+            })
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
+
+        return res.status(200).json({ message: 'Comment deleted' })
+    })(req, res)
 })
 
 export default router

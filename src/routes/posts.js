@@ -2,6 +2,7 @@ import express from 'express'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
 import multer from 'multer'
+import passport from 'passport'
 
 const router = express.Router()
 
@@ -16,59 +17,62 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 router.put('/', upload.single('image'), async (req, res) => {
-    // Create `posts` collection if it doesn't exist
-    if (!(await mongo.hasTable('posts'))) {
-        await mongo.createTable('posts')
-        // Create text index for search. Include `title` and `body` fields
-        await mongo.db.createIndex('posts', { title: 'text', body: 'text' })
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-        // Create index for sorting by date
-        await mongo.db.createIndex('posts', { date: -1 })
-    }
+        // Create `posts` collection if it doesn't exist
+        if (!(await mongo.hasTable('posts'))) {
+            await mongo.createTable('posts')
+            // Create text index for search. Include `title` and `body` fields
+            await mongo.db.createIndex('posts', { title: 'text', body: 'text' })
 
-    // Get fields
-    const { userId, title, body } = req.body
+            // Create index for sorting by date
+            await mongo.db.createIndex('posts', { date: -1 })
+        }
 
-    // Validate fields
-    if (!userId || !title || !body)
-        return res.status(400).json({ error: true, message: 'Missing fields' })
+        // Get fields
+        const { title, body } = req.body
 
-    // Verify user exists
-    const user = await mongo.get('users', userId)
-    if (!user) return res.status(404).json({ error: true, message: 'User not found' })
-    delete user._id
-    delete user.password
+        // Validate fields
+        if (!title || !body) return res.status(400).json({ error: true, message: 'Missing fields' })
 
-    // Generate UUID v5 for post ID
-    const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
+        // Verify user exists
+        const user = await mongo.get('users', userId)
+        delete user._id
+        delete user.password
 
-    // Get image path
-    const domain = `${req.protocol}://${req.get('host')}`
-    const imagePath = req.file ? `${domain}/images/posts/${req.file.filename}` : null
+        // Generate UUID v5 for post ID
+        const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
-    // Create post
-    try {
-        await mongo.create('posts', generatedId, {
-            user: userId,
-            title,
-            body,
-            image: imagePath,
-            date: Date.now(),
-            deleted: false
-        })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        // Get image path
+        const domain = `${req.protocol}://${req.get('host')}`
+        const imagePath = req.file ? `${domain}/images/posts/${req.file.filename}` : null
 
-    // Get post
-    const post = await mongo.get('posts', generatedId)
-    delete post._id
+        // Create post
+        try {
+            await mongo.create('posts', generatedId, {
+                user: userId,
+                title,
+                body,
+                image: imagePath,
+                date: Date.now(),
+                deleted: false
+            })
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
 
-    // Add user to post
-    post.user = user
+        // Get post
+        const post = await mongo.get('posts', generatedId)
+        delete post._id
 
-    // Return post
-    return res.status(201).json({ post, message: 'Post created' })
+        // Add user to post
+        post.user = user
+
+        // Return post
+        return res.status(201).json({ post, message: 'Post created' })
+    })(req, res)
 })
 
 router.get('/', async (req, res) => {
@@ -162,46 +166,62 @@ router.get('/:id', async (req, res) => {
 })
 
 router.patch('/:id', async (req, res) => {
-    const { id } = req.params
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    const { title, body } = req.body
+        const { id } = req.params
 
-    const post = await mongo.get('posts', id)
-    if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+        const { title, body } = req.body
 
-    const updatedPost = {
-        title: title || post.title,
-        body: body || post.body,
-        edited: Date.now()
-    }
+        const post = await mongo.get('posts', id)
+        if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
-    try {
-        await mongo.update('posts', id, updatedPost)
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        // Check if user is trying to update their own post
+        if (userId !== post.user) return res.status(403).json({ error: true, message: 'Forbidden' })
 
-    return res.status(200).json({ post: { ...post, ...updatedPost }, message: 'Post updated' })
+        const updatedPost = {
+            title: title || post.title,
+            body: body || post.body,
+            edited: Date.now()
+        }
+
+        try {
+            await mongo.update('posts', id, updatedPost)
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
+
+        return res.status(200).json({ post: { ...post, ...updatedPost }, message: 'Post updated' })
+    })(req, res)
 })
 
 router.delete('/:id', async (req, res) => {
-    const { id } = req.params
+    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
 
-    const post = await mongo.get('posts', id)
-    if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
+        const { id } = req.params
 
-    try {
-        await mongo.update('posts', id, {
-            deleted: true,
-            body: 'This post has been deleted',
-            title: 'Deleted',
-            user: null
-        })
-    } catch (err) {
-        return res.status(500).json({ error: true, message: err.message })
-    }
+        const post = await mongo.get('posts', id)
+        if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
-    return res.status(200).json({ message: 'Post deleted' })
+        // Check if user is trying to delete their own post
+        if (userId !== post.user) return res.status(403).json({ error: true, message: 'Forbidden' })
+
+        try {
+            await mongo.update('posts', id, {
+                deleted: true,
+                body: 'This post has been deleted',
+                title: 'Deleted',
+                user: null
+            })
+        } catch (err) {
+            return res.status(500).json({ error: true, message: err.message })
+        }
+
+        return res.status(200).json({ message: 'Post deleted' })
+    })(req, res)
 })
 
 router.get('/user/:id', async (req, res) => {
