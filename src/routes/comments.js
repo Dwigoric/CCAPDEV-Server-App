@@ -5,7 +5,7 @@ import passport from 'passport'
 
 const router = express.Router()
 
-router.put('/:postId', passport.authenticate('jwt', { session: false }, null), async (req, res) => {
+router.put('/:postId', async (req, res) => {
     passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
