@@ -26,6 +26,12 @@ npm start
 All configuration is done through environment variables.
 You can set these variables in a `.env` file in the root of the project.
 Alternatively, you can set them in your shell.
+### JWT Secret
+You can change the JWT secret by setting the `JWT_SECRET` environment variable.
+This variable is **required** to be set.
+The secret should be a random string of characters.
+This will be used to sign the JWTs.
+
 ### Port
 You can change the port the server runs on by setting the `PORT` environment variable.
 The default port is `3000`.

@@ -5,6 +5,12 @@ import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 import cors from 'cors'
 import 'dotenv/config'
+import passport from 'passport'
+import session from 'express-session'
+import con_sqlite3 from 'connect-sqlite3'
+
+// SQLite3 database
+const SQLiteStore = con_sqlite3(session)
 
 // MongoDB
 import { mongo } from './db/conn.js'
@@ -12,6 +18,7 @@ await mongo.init().then(() => console.log('MongoDB connected!'))
 
 // Routes
 import indexRouter from './routes/index.js'
+import authRouter from './routes/auth.js'
 import usersRouter from './routes/users.js'
 import postsRouter from './routes/posts.js'
 import commentsRouter from './routes/comments.js'
@@ -19,10 +26,10 @@ import votesRouter from './routes/votes.js'
 
 const app = express()
 
+// Configure CORS
 if (!process.env.FRONTEND_URL)
     console.warn('FRONTEND_URL not set. The default value is http://localhost:5173')
 
-// Configure CORS
 app.use(
     cors({
         origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -30,13 +37,23 @@ app.use(
     })
 )
 
+// Initialize authentication
+import './auth/auth.js'
+
+// Throw error if JWT_SECRET is not set
+if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET not set')
+    process.exit(1)
+}
+
 app.use(logger('dev'))
-app.use(express.static('public'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
+app.use(express.static('public'))
 
 app.use('/', indexRouter)
+app.use('/auth', authRouter)
 app.use('/users', usersRouter)
 app.use('/posts', postsRouter)
 app.use('/comments', commentsRouter)
