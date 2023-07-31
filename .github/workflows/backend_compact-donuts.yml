@@ -27,7 +27,7 @@ jobs:
           
       - name: Install node-pre-gyp
         run: |
-          npm -g install node-pre-gyp
+          npm -g install @mapbox/node-pre-gyp
 
       - name: Install dependencies
         run: |
