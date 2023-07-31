@@ -12,7 +12,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     environment:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
@@ -24,20 +24,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '18.x'
-          
-      - name: Install @mapbox/node-pre-gyp
-        run: |
-          npm -g install @mapbox/node-pre-gyp
 
       - name: Install dependencies
         run: |
           npm install --production
-          
-      - name: Reinstall and build argon2 with node-pre-gyp
-        run: |
-          npm uninstall argon2
-          npm install argon2 --ignore-scripts
-          npx @mapbox/node-pre-gyp rebuild -C ./node_modules/argon2
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
