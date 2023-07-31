@@ -27,9 +27,9 @@ jobs:
 
       - name: Install dependencies with yarn
         run: |
-          echo('Get latest yarn')
+          echo 'Get latest yarn'
           yarn set version stable
-          echo('Install dependencies')
+          echo 'Install dependencies'
           yarn install --immutable
 
       - name: 'Deploy to Azure Web App'
