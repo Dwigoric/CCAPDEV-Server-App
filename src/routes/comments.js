@@ -27,7 +27,8 @@ router.put('/:postId', async (req, res) => {
                 user,
                 postId,
                 deleted: false,
-                parentCommentId: parentCommentId || null
+                parentCommentId: parentCommentId || null,
+                date: Date.now()
             })
         } catch (err) {
             return res.status(500).json({ error: true, message: err.message })
@@ -76,6 +77,23 @@ router.get('/:postId/:id', async (req, res) => {
     }
 
     return res.status(200).json({ comment, message: 'Comment found' })
+})
+
+router.get('/user/:userId', async (req, res) => {
+    const { userId } = req.params
+
+    const comments = await mongo.getManyBy('comments', 'user', userId)
+
+    for (const comment of comments) {
+        delete comment._id
+        if (comment.deleted) continue
+
+        comment.user = await mongo.get('users', comment.user)
+        delete comment.user._id
+        delete comment.user.password
+    }
+
+    return res.status(200).json({ comments })
 })
 
 router.patch('/:postId/:id', async (req, res) => {
