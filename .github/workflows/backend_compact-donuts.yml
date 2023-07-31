@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '18.x'
           
-      - name: Install node-pre-gyp
+      - name: Install @mapbox/node-pre-gyp
         run: |
           npm -g install @mapbox/node-pre-gyp
 
@@ -33,10 +33,10 @@ jobs:
         run: |
           npm install --production
           
-      - name: Install and build argon2 with node-pre-gyp
+      - name: Reinstall and build argon2 with node-pre-gyp
         run: |
-          npm install argon2 --ignore-script
-          node-pre-gyp rebuild -C ./node_modules/argon2
+          npm uninstall argon2
+          npm install argon2 --build-from-source
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
