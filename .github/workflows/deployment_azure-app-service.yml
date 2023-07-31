@@ -25,9 +25,12 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Install dependencies
+      - name: Install dependencies with yarn
         run: |
-          npm install --production
+          echo('Get latest yarn')
+          yarn set version stable
+          echo('Install dependencies')
+          yarn install --immutable
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
