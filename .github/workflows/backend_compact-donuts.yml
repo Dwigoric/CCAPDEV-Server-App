@@ -36,7 +36,8 @@ jobs:
       - name: Reinstall and build argon2 with node-pre-gyp
         run: |
           npm uninstall argon2
-          npm install argon2 --build-from-source
+          npm install argon2 --ignore-scripts
+          npx @mapbox/node-pre-gyp rebuild -C ./node_modules/argon2
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
