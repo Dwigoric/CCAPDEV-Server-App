@@ -41,7 +41,6 @@ router.put('/', upload.single('image'), async (req, res) => {
         const user = await mongo.get('users', userId)
         delete user._id
         delete user.password
-        delete user.salt
 
         // Generate UUID v5 for post ID
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
@@ -108,7 +107,6 @@ router.get('/', async (req, res) => {
         const user = await mongo.get('users', post.user)
         delete user._id
         delete user.password
-        delete user.salt
         post.user = user
     }
 
@@ -137,7 +135,6 @@ router.get('/search', async (req, res, next) => {
         const user = await mongo.get('users', post.user)
         delete user._id
         delete user.password
-        delete user.salt
         post.user = user
     }
 
@@ -162,7 +159,6 @@ router.get('/:id', async (req, res) => {
         const user = await mongo.get('users', post.user)
         delete user._id
         delete user.password
-        delete user.salt
         post.user = user
     }
 
@@ -239,7 +235,6 @@ router.get('/user/:id', async (req, res) => {
         const user = await mongo.get('users', post.user)
         delete user._id
         delete user.password
-        delete user.salt
         post.user = user
     }
 

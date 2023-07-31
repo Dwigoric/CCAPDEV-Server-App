@@ -23,7 +23,6 @@ router.get('/:id', async (req, res) => {
 
     // Send a JSON response with 200 OK
     delete user.password
-    delete user.salt
     delete user._id
     return res.status(200).json({ user, message: 'User found' })
 })
@@ -35,7 +34,6 @@ router.get('/username/:username', async (req, res) => {
 
     // Send a JSON response with 200 OK
     delete user.password
-    delete user.salt
     delete user._id
     return res.status(200).json({ user, message: 'User found' })
 })
@@ -74,7 +72,6 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         // Retrieve the updated user
         const user = await mongo.get('users', id)
         delete user.password
-        delete user.salt
         delete user._id
 
         // Send a JSON response with 200 OK

@@ -39,7 +39,6 @@ router.put('/:postId', async (req, res) => {
         comment.user = await mongo.get('users', comment.user)
         delete comment.user._id
         delete comment.user.password
-        delete comment.user.salt
 
         return res.status(201).json({ comment, message: 'Comment created' })
     })(req, res)
@@ -58,7 +57,6 @@ router.get('/:postId', async (req, res) => {
         comment.user = await mongo.get('users', comment.user)
         delete comment.user._id
         delete comment.user.password
-        delete comment.user.salt
     }
 
     return res.status(200).json({ comments })
@@ -75,7 +73,6 @@ router.get('/:postId/:id', async (req, res) => {
         comment.user = await mongo.get('users', comment.user)
         delete comment.user._id
         delete comment.user.password
-        delete comment.user.salt
     }
 
     return res.status(200).json({ comment, message: 'Comment found' })

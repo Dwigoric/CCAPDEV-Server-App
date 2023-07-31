@@ -3,7 +3,7 @@ import LocalStrategy from 'passport-local'
 import { Strategy as JWTStrategy, ExtractJwt } from 'passport-jwt'
 import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
-import crypto from 'crypto'
+import argon2 from 'argon2'
 
 /**
  * Configure user registration strategy.
@@ -31,36 +31,28 @@ passport.use(
             passwordField: 'password'
         },
         async function verify(username, password, done) {
-            const cb = async function (err, hashedPassword) {
-                if (err) {
-                    return done(err)
-                }
+            // Hash password using argon2
+            const hashedPassword = await argon2.hash(password)
 
-                const generatedId = uuidV5(username, uuidV5.URL)
+            const generatedId = uuidV5(username, uuidV5.URL)
 
-                const user = {
-                    id: generatedId,
-                    username,
-                    password: hashedPassword.toString('hex'),
-                    salt,
-                    image: `https://robohash.org/${username}`,
-                    description: ''
-                }
-
-                try {
-                    await mongo.create('users', generatedId, user)
-
-                    // Delete password and salt from user object
-                    delete user.password
-                    delete user.salt
-                    return done(null, user)
-                } catch (err) {
-                    return done(err)
-                }
+            const user = {
+                id: generatedId,
+                username,
+                password: hashedPassword,
+                image: `https://robohash.org/${username}`,
+                description: ''
             }
 
-            const salt = crypto.randomBytes(64).toString('hex')
-            crypto.pbkdf2(password, salt, 100000, 128, 'sha3-256', cb)
+            try {
+                await mongo.create('users', generatedId, user)
+
+                // Delete password from user object
+                delete user.password
+                return done(null, user)
+            } catch (err) {
+                return done(err)
+            }
         }
     )
 )
@@ -100,19 +92,13 @@ passport.use(
                     return done(null, false, { message: 'User not found' })
                 }
 
-                // Validate password using crypto
-                const validate =
-                    crypto
-                        .pbkdf2Sync(password, user.salt, 100000, 128, 'sha3-256')
-                        .toString('hex') === user.password
-
-                if (!validate) {
+                // Validate password using argon2
+                if (!(await argon2.verify(user.password, password))) {
                     return done(null, false, { message: 'Wrong Password' })
                 }
 
-                // Delete password and salt from user object
+                // Delete password from user object
                 delete user.password
-                delete user.salt
                 delete user._id
 
                 return done(null, user, { message: 'Logged in Successfully' })
