@@ -45,6 +45,23 @@ router.put('/:postId', async (req, res) => {
     })(req, res)
 })
 
+router.get('/user/:userId', async (req, res) => {
+    const { userId } = req.params
+
+    const comments = await mongo.getManyBy('comments', 'user', userId)
+
+    for (const comment of comments) {
+        delete comment._id
+        if (comment.deleted) continue
+
+        comment.user = await mongo.get('users', comment.user)
+        delete comment.user._id
+        delete comment.user.password
+    }
+
+    return res.status(200).json({ comments })
+})
+
 router.get('/:postId', async (req, res) => {
     // Return if `comments` collection doesn't exist
     if (!(await mongo.hasTable('comments'))) return res.status(200).json({ comments: [] })
@@ -77,23 +94,6 @@ router.get('/:postId/:id', async (req, res) => {
     }
 
     return res.status(200).json({ comment, message: 'Comment found' })
-})
-
-router.get('/user/:userId', async (req, res) => {
-    const { userId } = req.params
-
-    const comments = await mongo.getManyBy('comments', 'user', userId)
-
-    for (const comment of comments) {
-        delete comment._id
-        if (comment.deleted) continue
-
-        comment.user = await mongo.get('users', comment.user)
-        delete comment.user._id
-        delete comment.user.password
-    }
-
-    return res.status(200).json({ comments })
 })
 
 router.patch('/:postId/:id', async (req, res) => {
