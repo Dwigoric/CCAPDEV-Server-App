@@ -51,8 +51,17 @@ router.get('/user/:userId', async (req, res) => {
     const comments = await mongo.getManyBy('comments', 'user', userId)
 
     for (const comment of comments) {
-        delete comment._id
         if (comment.deleted) continue
+        delete comment._id
+
+        const post = await mongo.get('posts', comment.postId)
+        if (post.deleted) continue
+        delete post._id
+        delete post.body
+        delete post.image
+        delete post.user
+        delete post.deleted
+        comment.post = post
 
         comment.user = await mongo.get('users', comment.user)
         delete comment.user._id
