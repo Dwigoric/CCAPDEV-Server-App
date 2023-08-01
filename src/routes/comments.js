@@ -105,7 +105,7 @@ router.get('/:postId/:id', async (req, res) => {
     return res.status(200).json({ comment, message: 'Comment found' })
 })
 
-router.patch('/:postId/:id', async (req, res) => {
+router.patch('/:id', async (req, res) => {
     passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
@@ -140,7 +140,7 @@ router.patch('/:postId/:id', async (req, res) => {
     })(req, res)
 })
 
-router.delete('/:postId/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
     passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
