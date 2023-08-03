@@ -10,6 +10,20 @@ router.put('/:postId', async (req, res) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
+        // Create `comments` collection if it doesn't exist
+        if (!(await mongo.hasTable('comments'))) {
+            await mongo.createTable('comments')
+
+            // Create ID index for comments.
+            await mongo.db.createIndex('comments', { id: 1 }, { name: 'ID', unique: true })
+
+            // Create user index for equality search.
+            await mongo.db.createIndex('comments', { user: 1 }, { name: 'User' })
+
+            // Create post index for equality search.
+            await mongo.db.createIndex('comments', { postId: 1 }, { name: 'Post ID' })
+        }
+
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
         const { body, postId, parentCommentId } = req.body

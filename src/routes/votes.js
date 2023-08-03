@@ -9,6 +9,21 @@ router.post('/:id', async (req, res) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
+        // Create `votes` collection if it doesn't exist
+        if (!(await mongo.hasTable('votes'))) {
+            await mongo.createTable('votes')
+
+            // Create user and post index for `votes` collection
+            await mongo.db.createIndex(
+                'votes',
+                { postId: 1, userId: 1 },
+                { name: 'Post ID and User ID', unique: true }
+            )
+
+            // Create post ID index for `votes` collection
+            await mongo.db.createIndex('votes', { postId: 1 }, { name: 'Post ID' })
+        }
+
         const { id: postId } = req.params
         const { vote } = req.body
 

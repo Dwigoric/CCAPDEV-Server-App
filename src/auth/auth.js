@@ -31,6 +31,21 @@ passport.use(
             passwordField: 'password'
         },
         async function verify(username, password, done) {
+            // Create `users` collection if it doesn't exist
+            if (!(await mongo.hasTable('users'))) {
+                await mongo.createTable('users')
+
+                // Create ID index for users.
+                await mongo.db.createIndex('users', { id: 1 }, { name: 'ID', unique: true })
+
+                // Create user index for equality search.
+                await mongo.db.createIndex(
+                    'users',
+                    { username: 1 },
+                    { name: 'Username', unique: true }
+                )
+            }
+
             // Hash password using argon2
             const hashedPassword = await argon2.hash(password)
 

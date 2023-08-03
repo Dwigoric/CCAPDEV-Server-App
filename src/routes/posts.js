@@ -24,11 +24,22 @@ router.put('/', upload.single('image'), async (req, res) => {
         // Create `posts` collection if it doesn't exist
         if (!(await mongo.hasTable('posts'))) {
             await mongo.createTable('posts')
-            // Create text index for search. Include `title` and `body` fields
-            await mongo.db.createIndex('posts', { title: 'text', body: 'text' })
+
+            // Create ID index for posts.
+            await mongo.db.createIndex('posts', { id: 1 }, { name: 'ID', unique: true })
+
+            // Create user index for equality search.
+            await mongo.db.createIndex('posts', { user: 1 }, { name: 'User' })
+
+            // Create text index for search.
+            await mongo.db.createIndex(
+                'posts',
+                { title: 'text', body: 'text' },
+                { name: 'Searching' }
+            )
 
             // Create index for sorting by date
-            await mongo.db.createIndex('posts', { date: -1 })
+            await mongo.db.createIndex('posts', { date: -1 }, { name: 'Date descending' })
         }
 
         // Get fields
