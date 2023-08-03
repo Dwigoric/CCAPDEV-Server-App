@@ -19,9 +19,6 @@ router.post('/:id', async (req, res) => {
                 { postId: 1, userId: 1 },
                 { name: 'Post ID and User ID', unique: true }
             )
-
-            // Create post ID index for `votes` collection
-            await mongo.db.createIndex('votes', { postId: 1 }, { name: 'Post ID' })
         }
 
         const { id: postId } = req.params
