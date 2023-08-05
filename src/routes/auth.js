@@ -30,11 +30,7 @@ router.post('/login', async (req, res, next) => {
                     const error = new Error('An error occurred.')
                     return next(error)
                 }
-                const regEx = /^[0-9A-Za-z]{1,20}$/
-  
-                if (!regEx.test(user.username)) {
-                    return res.status(400).json({ message: 'Username is invalid' })
-                }
+
                 if (!user) {
                     return res.status(401).json({ message: info.message })
                 }
@@ -68,12 +64,6 @@ router.put(
     passport.authenticate('signup', { session: false }, null),
     function (req, res) {
         const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET)
-
-        const regEx = /^[0-9A-Za-z]{1,20}$/
-  
-        if (!regEx.test(req.body.username)) {
-            return res.status(400).json({ message: 'Username is invalid' })
-        }
 
         res.json({ message: 'Signup successful', token })
     }

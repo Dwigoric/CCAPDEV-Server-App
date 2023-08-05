@@ -31,6 +31,10 @@ passport.use(
             passwordField: 'password'
         },
         async function verify(username, password, done) {
+            // Validate username
+            const regEx = /^[0-9A-Za-z]{1,20}$/
+            if (!regEx.test(username)) return done('Username is invalid')
+
             // Create `users` collection if it doesn't exist
             if (!(await mongo.hasTable('users'))) {
                 await mongo.createTable('users')
@@ -99,6 +103,10 @@ passport.use(
         },
         async function verify(username, password, done) {
             try {
+                // Validate username
+                const regEx = /^[0-9A-Za-z]{1,20}$/
+                if (!regEx.test(username)) return done('Username is invalid')
+
                 if (!(await mongo.hasTable('users'))) return done('User not found')
 
                 const user = await mongo.findOne('users', { username })
