@@ -30,6 +30,12 @@ router.get('/:id', async (req, res) => {
 router.get('/username/:username', async (req, res) => {
     const { username } = req.params
     const user = await mongo.getBy('users', 'username', username)
+    const regEx = /^[0-9A-Za-z]{1,20}$/
+
+    if (!regEx.test(username)) {
+        return res.status(400).json({ error: true, message: 'Username is invalid' })
+    }
+
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
 
     // Send a JSON response with 200 OK
@@ -49,6 +55,11 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         if (userId !== id) return res.status(403).json({ error: true, message: 'Forbidden' })
 
         const { username, description } = req.body
+        const regEx = /^[0-9A-Za-z]{1,20}$/
+        // Check if the name is valid
+        if (!regEx.test(username)) {
+            return res.status(400).json({ error: true, message: 'Username is invalid' })
+    }
 
         if (!(await mongo.has('users', id)))
             return res.status(404).json({ error: true, message: 'User not found' })
