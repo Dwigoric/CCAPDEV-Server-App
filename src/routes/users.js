@@ -3,6 +3,7 @@ import { mongo } from '../db/conn.js'
 import { v5 as uuidV5 } from 'uuid'
 import multer from 'multer'
 import passport from 'passport'
+import argon2 from 'argon2'
 
 const router = express.Router()
 
@@ -54,7 +55,7 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         // Check if user is trying to update their own profile
         if (userId !== id) return res.status(403).json({ error: true, message: 'Forbidden' })
 
-        const { username, description } = req.body
+        const { username, description, currentPassword, newPassword } = req.body
         const regEx = /^[0-9A-Za-z]{1,20}$/
         // Check if the name is valid
         if (!regEx.test(username)) {
@@ -69,6 +70,11 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         if (exists && exists.id !== id)
             return res.status(400).json({ error: true, message: 'Username already exists' })
 
+        // Retrieve user from database
+        const user = await mongo.get('users', id)
+        delete user._id
+
+        // Store updated user data
         const updatedUser = {}
 
         if (username) updatedUser.username = username
@@ -77,16 +83,36 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
             const domain = `${req.protocol}://${req.get('host')}`
             updatedUser.image = `${domain}/images/avatars/${req.file.filename}`
         }
+        if (newPassword) {
+            // Check if current password is provided
+            if (!currentPassword)
+                return res
+                    .status(400)
+                    .json({ error: true, message: 'Current password is required' })
 
-        await mongo.update('users', id, updatedUser)
+            // TODO: Check if new password is valid
 
-        // Retrieve the updated user
-        const user = await mongo.get('users', id)
+            // Check if current password is correct
+            if (!(await argon2.verify(user.password, currentPassword)))
+                return res
+                    .status(400)
+                    .json({ error: true, message: 'Current password is incorrect' })
+            updatedUser.password = await argon2.hash(newPassword)
+        }
         delete user.password
-        delete user._id
+
+        // Update user in database
+        await mongo.update('users', id, updatedUser)
+        delete updatedUser.password
 
         // Send a JSON response with 200 OK
-        return res.status(200).json({ user, message: 'User updated' })
+        return res.status(200).json({
+            user: {
+                ...user,
+                ...updatedUser
+            },
+            message: 'User updated'
+        })
     })(req, res)
 })
 
