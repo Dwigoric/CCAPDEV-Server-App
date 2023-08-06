@@ -35,6 +35,8 @@ passport.use(
             const regEx = /^[0-9A-Za-z]{1,20}$/
             if (!regEx.test(username)) return done('Username is invalid')
 
+            if (password.length < 6) return done('Password is too short')
+
             // Create `users` collection if it doesn't exist
             if (!(await mongo.hasTable('users'))) {
                 await mongo.createTable('users')
@@ -106,6 +108,8 @@ passport.use(
                 // Validate username
                 const regEx = /^[0-9A-Za-z]{1,20}$/
                 if (!regEx.test(username)) return done('Username is invalid')
+
+                if (password.length < 6) return done('Password is too short')
 
                 if (!(await mongo.hasTable('users'))) return done('User not found')
 

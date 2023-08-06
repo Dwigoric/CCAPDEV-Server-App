@@ -30,13 +30,12 @@ router.get('/:id', async (req, res) => {
 
 router.get('/username/:username', async (req, res) => {
     const { username } = req.params
-    const user = await mongo.getBy('users', 'username', username)
     const regEx = /^[0-9A-Za-z]{1,20}$/
 
-    if (!regEx.test(username)) {
+    if (!regEx.test(username))
         return res.status(400).json({ error: true, message: 'Username is invalid' })
-    }
 
+    const user = await mongo.getBy('users', 'username', username)
     if (!user) return res.status(404).json({ error: true, message: 'User not found' })
 
     // Send a JSON response with 200 OK
@@ -90,7 +89,10 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
                     .status(400)
                     .json({ error: true, message: 'Current password is required' })
 
-            // TODO: Check if new password is valid
+            if (newPassword.length < 6)
+                return res
+                    .status(400)
+                    .json({ error: true, message: 'Password must be at least 6 characters' })
 
             // Check if current password is correct
             if (!(await argon2.verify(user.password, currentPassword)))

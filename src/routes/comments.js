@@ -10,6 +10,10 @@ router.put('/:postId', async (req, res) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
+        if (!(await mongo.has('posts', postId))) {
+            return res.status(404).json({ error: true, message: 'Post not found' })
+        }
+
         // Create `comments` collection if it doesn't exist
         if (!(await mongo.hasTable('comments'))) {
             await mongo.createTable('comments')
@@ -27,10 +31,6 @@ router.put('/:postId', async (req, res) => {
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
         const { body, postId, parentCommentId } = req.body
-
-        if (!(await mongo.getBy('posts', 'id', postId))) {
-            return res.status(400).json({ error: true, message: 'Post not found'})
-        }
 
         if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
         if (!postId)
@@ -66,10 +66,11 @@ router.put('/:postId', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params
 
-    const comments = await mongo.getManyBy('comments', 'user', userId)
-    if (!(await mongo.getBy('users', 'id', userId))) {
-        return res.status(400).json({error:true, message: 'User not found'})
+    if (!(await mongo.has('users', userId))) {
+        return res.status(404).json({ error: true, message: 'User not found' })
     }
+
+    const comments = await mongo.getManyBy('comments', 'user', userId)
 
     for (const comment of comments) {
         if (comment.deleted) continue
@@ -96,7 +97,13 @@ router.get('/:postId', async (req, res) => {
     // Return if `comments` collection doesn't exist
     if (!(await mongo.hasTable('comments'))) return res.status(200).json({ comments: [] })
 
-    const comments = await mongo.getManyBy('comments', 'postId', req.params.postId)
+    const { postId } = req.params
+
+    if (!(await mongo.has('posts', postId))) {
+        return res.status(400).json({ error: true, message: 'Post not found' })
+    }
+
+    const comments = await mongo.getManyBy('comments', 'postId', postId)
 
     for (const comment of comments) {
         delete comment._id
@@ -108,26 +115,6 @@ router.get('/:postId', async (req, res) => {
     }
 
     return res.status(200).json({ comments })
-})
-
-router.get('/:postId/:id', async (req, res) => {
-    const { id } = req.params
-
-    if (!(await mongo.getBy('posts', 'id', postId))) {
-        return res.status(400).json({ error: true, message: 'Post not found'})
-    }
-
-    const comment = await mongo.get('comments', id)
-    if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
-    delete comment._id
-
-    if (!comment.deleted) {
-        comment.user = await mongo.get('users', comment.user)
-        delete comment.user._id
-        delete comment.user.password
-    }
-
-    return res.status(200).json({ comment, message: 'Comment found' })
 })
 
 router.patch('/:id', async (req, res) => {
