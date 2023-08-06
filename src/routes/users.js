@@ -59,14 +59,14 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         // Check if the name is valid
         if (!regEx.test(username)) {
             return res.status(400).json({ error: true, message: 'Username is invalid' })
-    }
+        }
 
         if (!(await mongo.has('users', id)))
             return res.status(404).json({ error: true, message: 'User not found' })
 
         // Check duplicate username
         const exists = await mongo.findOne('users', { username })
-        if (exists && exists._id !== id)
+        if (exists && exists.id !== id)
             return res.status(400).json({ error: true, message: 'Username already exists' })
 
         const updatedUser = {}
