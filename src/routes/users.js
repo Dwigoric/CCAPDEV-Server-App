@@ -75,7 +75,7 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         if (username) updatedUser.username = username
         if (description) updatedUser.description = description
         if (req.file) {
-            const domain = `https://${req.get('host')}`
+            const domain = `${req.protocol}://${req.get('host')}`
             updatedUser.image = `${domain}/images/avatars/${req.file.filename}`
         }
         if (newPassword) {
