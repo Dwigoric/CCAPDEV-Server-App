@@ -52,6 +52,9 @@ passport.use(
                 )
             }
 
+            // Check if username already exists
+            if (await mongo.findOne('users', { username })) return done('Username already exists')
+
             // Hash password using argon2
             const hashedPassword = await argon2.hash(password)
 
