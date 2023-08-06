@@ -10,9 +10,19 @@ router.put('/:postId', async (req, res) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
-        if (!(await mongo.has('posts', postId))) {
+        const { body, postId, parentCommentId } = req.body
+
+        if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+        if (body.length > 500)
+            return res
+                .status(400)
+                .json({ error: true, message: 'Comment body cannot be longer than 500 characters' })
+
+        if (!postId)
+            return res.status(400).json({ error: true, message: 'Comment postId is required' })
+
+        if (!(await mongo.has('posts', postId)))
             return res.status(404).json({ error: true, message: 'Post not found' })
-        }
 
         // Create `comments` collection if it doesn't exist
         if (!(await mongo.hasTable('comments'))) {
@@ -29,15 +39,6 @@ router.put('/:postId', async (req, res) => {
         }
 
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
-
-        const { body, postId, parentCommentId } = req.body
-
-        if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
-        if (!postId)
-            return res.status(400).json({ error: true, message: 'Comment postId is required' })
-
-        if (!(await mongo.has('posts', postId)))
-            return res.status(404).json({ error: true, message: 'Post not found' })
 
         try {
             await mongo.create('comments', generatedId, {
@@ -127,6 +128,10 @@ router.patch('/:id', async (req, res) => {
         const { body } = req.body
 
         if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
+        if (body.length > 500)
+            return res
+                .status(400)
+                .json({ error: true, message: 'Comment body cannot be longer than 500 characters' })
 
         const comment = await mongo.get('comments', id)
         if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })

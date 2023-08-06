@@ -21,6 +21,15 @@ router.put('/', upload.single('image'), async (req, res) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
+        // Get fields
+        const { title, body } = req.body
+
+        // Validate fields
+        if (!title || !body) return res.status(400).json({ error: true, message: 'Missing fields' })
+
+        if (title && title.length > 100)
+            return res.status(400).json({ error: true, message: 'Title is too long' })
+
         // Create `posts` collection if it doesn't exist
         if (!(await mongo.hasTable('posts'))) {
             await mongo.createTable('posts')
@@ -42,13 +51,6 @@ router.put('/', upload.single('image'), async (req, res) => {
             await mongo.db.createIndex('posts', { date: -1 }, { name: 'Date descending' })
         }
 
-        // Get fields
-        const { title, body } = req.body
-
-        // Validate fields
-        if (!title || !body) return res.status(400).json({ error: true, message: 'Missing fields' })
-
-        // Verify user exists
         const user = await mongo.get('users', userId)
         delete user._id
         delete user.password
@@ -198,6 +200,11 @@ router.patch('/:id', async (req, res) => {
 
         // Check if user is trying to update their own post
         if (userId !== post.user) return res.status(403).json({ error: true, message: 'Forbidden' })
+
+        if (title && title.length > 100)
+            return res
+                .status(400)
+                .json({ error: true, message: 'Title should be less than 100 characters' })
 
         const updatedPost = {
             title: title || post.title,
