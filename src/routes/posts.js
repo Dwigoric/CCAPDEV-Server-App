@@ -93,6 +93,9 @@ router.get('/', async (req, res) => {
 
     // Use `last` and `limit` query param to paginate
     const { last, limit } = req.query
+    if (isNaN(last) && isNaN(limit)) {
+        return res.status(400).json({ error: true, message: "last and limit should be numbers"})
+    }
 
     const posts = await mongo.getPaginated(
         'posts',
@@ -184,6 +187,10 @@ router.patch('/:id', async (req, res) => {
         const { id } = req.params
 
         const { title, body } = req.body
+
+        if (!(title || body)) {
+            return res.status(400).json({ error: true, message: "Title and body not given"})
+        }
 
         const post = await mongo.get('posts', id)
         if (!post) return res.status(404).json({ error: true, message: 'Post not found' })

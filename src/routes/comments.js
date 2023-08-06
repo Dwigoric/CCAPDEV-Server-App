@@ -28,6 +28,10 @@ router.put('/:postId', async (req, res) => {
 
         const { body, postId, parentCommentId } = req.body
 
+        if (!(await mongo.getBy('posts', 'id', postId))) {
+            return res.status(400).json({ error: true, message: 'Post not found'})
+        }
+
         if (!body) return res.status(400).json({ error: true, message: 'Comment body is required' })
         if (!postId)
             return res.status(400).json({ error: true, message: 'Comment postId is required' })
@@ -63,6 +67,9 @@ router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params
 
     const comments = await mongo.getManyBy('comments', 'user', userId)
+    if (!(await mongo.getBy('users', 'id', userId))) {
+        return res.status(400).json({error:true, message: 'User not found'})
+    }
 
     for (const comment of comments) {
         if (comment.deleted) continue
@@ -105,6 +112,10 @@ router.get('/:postId', async (req, res) => {
 
 router.get('/:postId/:id', async (req, res) => {
     const { id } = req.params
+
+    if (!(await mongo.getBy('posts', 'id', postId))) {
+        return res.status(400).json({ error: true, message: 'Post not found'})
+    }
 
     const comment = await mongo.get('comments', id)
     if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
