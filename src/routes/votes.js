@@ -5,9 +5,10 @@ import passport from 'passport'
 const router = express.Router()
 
 router.post('/:id', async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         // Create `votes` collection if it doesn't exist
         if (!(await mongo.hasTable('votes'))) {
@@ -37,11 +38,11 @@ router.post('/:id', async (req, res) => {
             await mongo.createTable('votes')
         }
 
-        const votesIndex = { postId, userId }
+        const votesIndex = { postId, userId: user.id }
 
         const updatedVote = {
             postId,
-            userId,
+            userId: user.id,
             vote
         }
 

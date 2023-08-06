@@ -45,14 +45,14 @@ router.get('/username/:username', async (req, res) => {
 })
 
 router.patch('/:id', upload.single('avatar'), async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, id, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
         const { id: userId } = req.params
 
         // Check if user is trying to update their own profile
-        if (userId !== id) return res.status(403).json({ error: true, message: 'Forbidden' })
+        if (userId !== user.id) return res.status(403).json({ error: true, message: 'Forbidden' })
 
         const { username, description, currentPassword, newPassword } = req.body
         const regEx = /^[0-9A-Za-z]{1,20}$/
@@ -61,17 +61,13 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
             return res.status(400).json({ error: true, message: 'Username is invalid' })
         }
 
-        if (!(await mongo.has('users', id)))
+        if (!(await mongo.has('users', user.id)))
             return res.status(404).json({ error: true, message: 'User not found' })
 
         // Check duplicate username
         const exists = await mongo.findOne('users', { username })
-        if (exists && exists.id !== id)
+        if (exists && exists.id !== user.id)
             return res.status(400).json({ error: true, message: 'Username already exists' })
-
-        // Retrieve user from database
-        const user = await mongo.get('users', id)
-        delete user._id
 
         // Store updated user data
         const updatedUser = {}
@@ -104,7 +100,7 @@ router.patch('/:id', upload.single('avatar'), async (req, res) => {
         delete user.password
 
         // Update user in database
-        await mongo.update('users', id, updatedUser)
+        await mongo.update('users', user.id, updatedUser)
         delete updatedUser.password
 
         // Send a JSON response with 200 OK

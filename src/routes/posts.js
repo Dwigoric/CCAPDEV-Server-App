@@ -17,9 +17,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 router.put('/', upload.single('image'), async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         // Get fields
         const { title, body } = req.body
@@ -51,10 +52,6 @@ router.put('/', upload.single('image'), async (req, res) => {
             await mongo.db.createIndex('posts', { date: -1 }, { name: 'Date descending' })
         }
 
-        const user = await mongo.get('users', userId)
-        delete user._id
-        delete user.password
-
         // Generate UUID v5 for post ID
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
@@ -65,7 +62,7 @@ router.put('/', upload.single('image'), async (req, res) => {
         // Create post
         try {
             await mongo.create('posts', generatedId, {
-                user: userId,
+                user: user.id,
                 title,
                 body,
                 image: imagePath,
@@ -187,9 +184,10 @@ router.get('/:id', async (req, res) => {
 })
 
 router.patch('/:id', async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         const { id } = req.params
 
@@ -199,7 +197,8 @@ router.patch('/:id', async (req, res) => {
         if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
         // Check if user is trying to update their own post
-        if (userId !== post.user) return res.status(403).json({ error: true, message: 'Forbidden' })
+        if (user.id !== post.user)
+            return res.status(403).json({ error: true, message: 'Forbidden' })
 
         if (title && title.length > 100)
             return res
@@ -223,9 +222,10 @@ router.patch('/:id', async (req, res) => {
 })
 
 router.delete('/:id', async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         const { id } = req.params
 
@@ -233,7 +233,8 @@ router.delete('/:id', async (req, res) => {
         if (!post) return res.status(404).json({ error: true, message: 'Post not found' })
 
         // Check if user is trying to delete their own post
-        if (userId !== post.user) return res.status(403).json({ error: true, message: 'Forbidden' })
+        if (user.id !== post.user)
+            return res.status(403).json({ error: true, message: 'Forbidden' })
 
         try {
             await mongo.update('posts', id, {

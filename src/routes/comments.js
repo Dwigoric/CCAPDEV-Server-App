@@ -9,6 +9,7 @@ router.put('/:postId', async (req, res) => {
     passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         const { body, postId, parentCommentId } = req.body
 
@@ -40,27 +41,24 @@ router.put('/:postId', async (req, res) => {
 
         const generatedId = uuidV5(Date.now().toString(), uuidV5.URL)
 
+        const newComment = {
+            body,
+            user: user.id,
+            postId,
+            deleted: false,
+            parentCommentId: parentCommentId || null,
+            date: Date.now()
+        }
+
         try {
-            await mongo.create('comments', generatedId, {
-                body,
-                user,
-                postId,
-                deleted: false,
-                parentCommentId: parentCommentId || null,
-                date: Date.now()
-            })
+            await mongo.create('comments', generatedId, newComment)
         } catch (err) {
             return res.status(500).json({ error: true, message: err.message })
         }
 
-        const comment = await mongo.get('comments', generatedId)
-        delete comment._id
+        newComment.user = user
 
-        comment.user = await mongo.get('users', comment.user)
-        delete comment.user._id
-        delete comment.user.password
-
-        return res.status(201).json({ comment, message: 'Comment created' })
+        return res.status(201).json({ comment: newComment, message: 'Comment created' })
     })(req, res)
 })
 
@@ -119,9 +117,10 @@ router.get('/:postId', async (req, res) => {
 })
 
 router.patch('/:id', async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         const { id } = req.params
 
@@ -137,7 +136,7 @@ router.patch('/:id', async (req, res) => {
         if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
         // Check if user is trying to update their own comment
-        if (userId !== comment.user)
+        if (user.id !== comment.user)
             return res.status(403).json({ error: true, message: 'Forbidden' })
 
         const updatedComment = {
@@ -158,9 +157,10 @@ router.patch('/:id', async (req, res) => {
 })
 
 router.delete('/:id', async (req, res) => {
-    passport.authenticate('jwt', { session: false }, async (err, userId, info) => {
+    passport.authenticate('jwt', { session: false }, async (err, user, info) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
+        delete user.password
 
         const { id } = req.params
 
@@ -168,7 +168,7 @@ router.delete('/:id', async (req, res) => {
         if (!comment) return res.status(404).json({ error: true, message: 'Comment not found' })
 
         // Check if user is trying to delete their own comment
-        if (userId !== comment.user)
+        if (user.id !== comment.user)
             return res.status(403).json({ error: true, message: 'Forbidden' })
 
         try {

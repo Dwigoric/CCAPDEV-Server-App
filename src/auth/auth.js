@@ -167,7 +167,8 @@ passport.use(
 
                 if (!user) return done(null, false, { message: 'User not found' })
 
-                return done(null, token.id)
+                delete user._id
+                return done(null, user)
             } catch (error) {
                 return done(error)
             }
