@@ -33,9 +33,9 @@ passport.use(
         async function verify(username, password, done) {
             // Validate username
             const regEx = /^[0-9A-Za-z]{1,20}$/
-            if (!regEx.test(username)) return done('Username is invalid')
+            if (!regEx.test(username)) return done(null, null, { message: 'Username is invalid' })
 
-            if (password.length < 6) return done('Password is too short')
+            if (password.length < 6) return done(null, null, { message: 'Password is too short' })
 
             // Create `users` collection if it doesn't exist
             if (!(await mongo.hasTable('users'))) {
@@ -53,7 +53,8 @@ passport.use(
             }
 
             // Check if username already exists
-            if (await mongo.findOne('users', { username })) return done('Username already exists')
+            if (await mongo.findOne('users', { username }))
+                return done(null, null, { message: 'Username already exists' })
 
             // Hash password using argon2
             const hashedPassword = await argon2.hash(password)
@@ -110,11 +111,14 @@ passport.use(
             try {
                 // Validate username
                 const regEx = /^[0-9A-Za-z]{1,20}$/
-                if (!regEx.test(username)) return done('Username is invalid')
+                if (!regEx.test(username))
+                    return done(null, null, { message: 'Username is invalid' })
 
-                if (password.length < 6) return done('Password is too short')
+                if (password.length < 6)
+                    return done(null, null, { message: 'Password is too short' })
 
-                if (!(await mongo.hasTable('users'))) return done('User not found')
+                if (!(await mongo.hasTable('users')))
+                    return done(null, null, { message: 'User not found' })
 
                 const user = await mongo.findOne('users', { username })
 

@@ -59,14 +59,15 @@ router.post('/login', async (req, res, next) => {
  * then a new user record is inserted into the database.  If the record is
  * successfully created, the app logs the user in.
  */
-router.put(
-    '/signup',
-    passport.authenticate('signup', { session: false }, null),
-    function (req, res) {
+router.put('/signup', async (req, res, next) => {
+    passport.authenticate('signup', { session: false }, (err, user, info) => {
+        if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
+        if (info) return res.status(401).json({ error: true, message: info.message })
+
         const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET)
 
         res.json({ message: 'Signup successful', token })
-    }
-)
+    })(req, res, next)
+})
 
 export default router
