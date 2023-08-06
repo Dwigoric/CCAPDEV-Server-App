@@ -1,7 +1,6 @@
 // Packages
 import createError from 'http-errors'
 import express from 'express'
-import cookieParser from 'cookie-parser'
 import logger from 'morgan'
 import cors from 'cors'
 import 'dotenv/config'
@@ -43,7 +42,6 @@ if (!process.env.JWT_SECRET) {
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
 app.use(express.static('public'))
 
 app.use('/', indexRouter)
