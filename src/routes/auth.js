@@ -64,7 +64,7 @@ router.put('/signup', async (req, res, next) => {
         if (err) return res.status(500).json({ error: true, message: 'Internal server error' })
         if (info) return res.status(401).json({ error: true, message: info.message })
 
-        const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET)
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET)
 
         res.json({ message: 'Signup successful', token })
     })(req, res, next)
