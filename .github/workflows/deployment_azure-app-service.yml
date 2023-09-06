@@ -30,7 +30,6 @@ jobs:
           echo 'Get latest yarn'
           yarn set version stable
           echo 'Install dependencies'
-          yarn plugin import interactive-tools
           yarn install --immutable
 
       - name: 'Deploy to Azure Web App'
